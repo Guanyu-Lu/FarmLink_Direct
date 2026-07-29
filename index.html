@@ -306,6 +306,200 @@
 
 
 
+
+    .virtual-map-wrap{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:
+        radial-gradient(circle at 15% 80%, rgba(47,107,60,.10), transparent 24%),
+        radial-gradient(circle at 82% 20%, rgba(242,184,75,.16), transparent 22%),
+        linear-gradient(90deg, rgba(47,107,60,.055) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(47,107,60,.055) 1px, transparent 1px),
+        #fbfdf9;
+      background-size:auto,auto,28px 28px,28px 28px;
+      padding:12px;
+      overflow:hidden;
+    }
+    .virtual-map-svg{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:14px;
+      background:rgba(255,255,255,.76);
+      border:1px solid rgba(219,229,215,.9);
+    }
+    .road-line{
+      fill:none;
+      stroke:#9fc497;
+      stroke-width:10;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      opacity:.7;
+    }
+    .road-line.secondary-road{
+      stroke:#d9e6d5;
+      stroke-width:5;
+      opacity:.95;
+    }
+    .map-dot{
+      fill:#fff;
+      stroke:#2f6b3c;
+      stroke-width:4;
+    }
+    .map-dot.active{
+      fill:#2f6b3c;
+      stroke:#1f4929;
+    }
+    .map-num{
+      font-size:16px;
+      font-weight:900;
+      text-anchor:middle;
+      dominant-baseline:central;
+      fill:#2f6b3c;
+    }
+    .map-num.active{fill:#fff}
+    .map-label{
+      font-size:13px;
+      font-weight:800;
+      fill:#172018;
+      text-anchor:middle;
+    }
+    .map-sub{
+      font-size:11px;
+      fill:#647066;
+      text-anchor:middle;
+    }
+    .rider-marker-text{
+      font-size:24px;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+    .map-location-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+      margin-top:10px;
+    }
+    .map-location-chip{
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+      padding:9px 10px;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .map-location-chip.active{
+      border-color:#79a96f;
+      box-shadow:0 0 0 3px rgba(47,107,60,.10);
+    }
+    .map-location-chip strong{
+      display:block;
+      color:var(--brand);
+      margin-bottom:2px;
+    }
+    .tracking-live-card{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:16px;
+      padding:15px;
+      margin:14px 0;
+      box-shadow:var(--shadow-soft);
+    }
+    .tracking-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px;
+      margin-top:10px;
+    }
+    .tracking-tile{
+      background:var(--surface-2);
+      border-radius:13px;
+      padding:11px 12px;
+    }
+    .tracking-tile span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:750;
+      margin-bottom:4px;
+    }
+    .tracking-tile strong{
+      display:block;
+      font-size:17px;
+      color:var(--text);
+    }
+    .eta-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      background:var(--info-bg);
+      color:var(--info);
+      border:1px solid #c8e4ec;
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      font-weight:850;
+    }
+    .order-actions{
+      min-width:190px;
+    }
+    .order-action-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .order-total-box{
+      width:100%;
+      border:1px solid #b7d1b0;
+      background:linear-gradient(135deg,#f4fbf1,#ffffff);
+      color:var(--text);
+      border-radius:15px;
+      padding:12px 14px;
+      text-align:left;
+      box-shadow:var(--shadow-soft);
+    }
+    .order-total-box span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:800;
+      margin-bottom:3px;
+    }
+    .order-total-box strong{
+      display:block;
+      color:var(--brand);
+      font-size:28px;
+      line-height:1.05;
+      letter-spacing:-.02em;
+    }
+    .order-total-box small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-weight:700;
+    }
+    .cost-detail-card{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      padding:13px;
+      margin-top:10px;
+    }
+    .cost-detail-card strong{
+      color:var(--brand);
+    }
+    @media(max-width:960px){
+      .map-location-grid,.tracking-grid{grid-template-columns:1fr 1fr}
+      .order-action-row{justify-content:flex-start}
+      .order-actions{min-width:0}
+    }
+    @media(max-width:650px){
+      .map-location-grid,.tracking-grid{grid-template-columns:1fr}
+      .order-total-box strong{font-size:24px}
+    }
+
     .route-map-card{
       margin-top:12px;
       border:1px solid var(--line);
@@ -920,7 +1114,7 @@
 
   function loadState(){
     try{
-      const saved = localStorage.getItem("farmlink_direct_kl_demo_v10_map_farm_group_state");
+      const saved = localStorage.getItem("farmlink_direct_kl_demo_v11_tracking_map_cost_state");
       return saved ? JSON.parse(saved) : clone(seedState);
     }catch(error){
       return clone(seedState);
@@ -928,7 +1122,7 @@
   }
 
   function saveState(){
-    localStorage.setItem("farmlink_direct_kl_demo_v10_map_farm_group_state", JSON.stringify(state));
+    localStorage.setItem("farmlink_direct_kl_demo_v11_tracking_map_cost_state", JSON.stringify(state));
   }
 
   ensureStateDefaults();
@@ -1284,6 +1478,18 @@
     }
     route.legStatus[key] = "Completed";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    const completedSegment = buildRelaySegments(route,orders)[segmentIndex];
+    route.riderSearches = route.riderSearches || {};
+    if(completedSegment){
+      route.riderSearches[key] = {
+        rider:currentRider().name,
+        point:"destination",
+        pointLabel:"completed destination",
+        location:completedSegment.to,
+        mapPoint:activeMapPointForSegment(segmentIndex,"destination"),
+        time:nowLabel()
+      };
+    }
     route.relaySegments = buildRelaySegments(route,orders);
     if(allRouteLegsCompleted(route)){
       route.status = "Delivered";
@@ -1316,34 +1522,79 @@
     return segmentIndex===0 ? "pickup" : segmentIndex===1 ? "area" : "buyer";
   }
 
+  function latestRouteSearch(route,activeLegKey=null){
+    const searches = route?.riderSearches || {};
+    if(activeLegKey && searches[activeLegKey]) return searches[activeLegKey];
+    const values = Object.values(searches);
+    return values.length ? values[values.length-1] : null;
+  }
+
+  function mapCoordinate(pointId){
+    const coords = {
+      farm:{x:78,y:205},
+      pickup:{x:235,y:160},
+      area:{x:405,y:118},
+      buyer:{x:560,y:78}
+    };
+    return coords[pointId] || coords.area;
+  }
+
+  function renderVirtualMapSvg(route,points,activePoint){
+    const activeCoord = activePoint ? mapCoordinate(activePoint) : null;
+    return `
+      <svg class="virtual-map-svg" viewBox="0 0 640 280" role="img" aria-label="Virtual Kuala Lumpur pilot delivery map">
+        <path class="road-line secondary-road" d="M65 65 C150 45, 260 70, 355 40 S520 28,590 55"></path>
+        <path class="road-line secondary-road" d="M95 235 C185 255, 285 225, 372 212 S510 196,585 220"></path>
+        <path class="road-line secondary-road" d="M185 40 C178 105, 172 170, 132 235"></path>
+        <path class="road-line secondary-road" d="M455 45 C438 96, 432 154, 470 232"></path>
+        <path class="road-line" d="M78 205 C150 188, 178 170, 235 160 C315 148, 338 126, 405 118 C468 108, 512 90, 560 78"></path>
+        ${points.map(point=>{
+          const c = mapCoordinate(point.id);
+          const active = point.id===activePoint;
+          return `
+            <g>
+              <circle class="map-dot ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="20"></circle>
+              <text class="map-num ${active?"active":""}" x="${c.x}" y="${c.y}">${point.icon}</text>
+              <text class="map-label" x="${c.x}" y="${c.y+37}">${point.label}</text>
+              <text class="map-sub" x="${c.x}" y="${c.y+53}">${point.value.length>24 ? point.value.slice(0,24)+"…" : point.value}</text>
+            </g>
+          `;
+        }).join("")}
+        ${activeCoord ? `
+          <g transform="translate(${activeCoord.x},${activeCoord.y-34})">
+            <text class="rider-marker-text" x="0" y="0">🏍️</text>
+          </g>
+        ` : ""}
+      </svg>
+    `;
+  }
+
   function renderRouteMap(route,orders,activeLegKey=null){
     const points = routeMapPoints(route,orders);
-    const searches = route.riderSearches || {};
-    const latestSearch = activeLegKey && searches[activeLegKey]
-      ? searches[activeLegKey]
-      : Object.values(searches).slice(-1)[0];
-
+    const latestSearch = latestRouteSearch(route,activeLegKey);
     const activePoint = latestSearch?.mapPoint || null;
 
     return `
       <div class="route-map-card">
         <div class="route-map-title">
-          <strong>Rider route map</strong>
+          <strong>Virtual KL pilot map</strong>
           <span class="route-code">${route.zoneCode||routeZoneCode(route.area)}</span>
         </div>
-        <div class="route-map-line">
-          ${points.map(point=>`
-            <div class="map-point ${point.id===activePoint?"active":""}">
-              <div class="map-pin">${point.icon}</div>
-              <strong>${point.label}</strong>
-              <div class="small">${point.value}</div>
-            </div>
-          `).join("")}
+        <div class="virtual-map-wrap">
+          ${renderVirtualMapSvg(route,points,activePoint)}
+          <div class="map-location-grid">
+            ${points.map(point=>`
+              <div class="map-location-chip ${point.id===activePoint?"active":""}">
+                <strong>${point.icon}. ${point.label}</strong>
+                ${point.value}
+              </div>
+            `).join("")}
+          </div>
         </div>
         <div class="map-search-result">
           ${latestSearch
             ? `<strong>Map search result:</strong> ${latestSearch.rider} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
-            : `<strong>Map search result:</strong> No rider search yet. Riders can search pickup or destination before accepting or completing a task.`
+            : `<strong>Map search result:</strong> No rider search yet. This is an illustrative virtual map for the MVP because the farm and hub data are prototype locations.`
           }
         </div>
       </div>
@@ -2073,7 +2324,7 @@
 
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>My orders</h3><p>View farm confirmation and delivery progress</p></div></div>
+        <div class="panel-head"><div><h3>My orders</h3><p>View farm confirmation, rider location, ETA and delivery progress</p></div></div>
         <div class="order-list">
           ${orders.length ? orders.map(order=>`
             <article class="order-card">
@@ -2082,11 +2333,18 @@
                   <h4>${orderProductLabel(order)} · ${orderQuantityLabel(order)}</h4>
                   <span class="status ${statusClass(order.status)}">${order.status}</span>
                 </div>
-                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Total: ${money(order.total)} · Delivery fee: ${money(order.deliveryFee)} · Placed ${order.createdAt}</div>${orderItemList(order)}
+                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Delivery fee: ${money(order.deliveryFee)} · Placed ${order.createdAt}</div>${orderItemList(order)}
               </div>
               <div class="order-actions">
-                <button class="secondary" onclick="openOrderTracking('${order.id}')">Track order</button>
-                ${order.status==="Awaiting farm confirmation" ? `<button class="danger-btn" onclick="cancelBuyerOrder('${order.id}')">Cancel</button>` : ""}
+                <div class="order-action-row">
+                  <button class="secondary" onclick="openOrderTracking('${order.id}')">Track order</button>
+                  ${order.status==="Awaiting farm confirmation" ? `<button class="danger-btn" onclick="cancelBuyerOrder('${order.id}')">Cancel</button>` : ""}
+                </div>
+                <button class="order-total-box" onclick="openOrderCostDetails('${order.id}')">
+                  <span>Total</span>
+                  <strong>${money(order.total)}</strong>
+                  <small>Click for produce + delivery fee</small>
+                </button>
               </div>
             </article>
           `).join("") : `<div class="empty"><strong>No orders yet</strong>Place an order from the marketplace to see it here.</div>`}
@@ -2122,7 +2380,7 @@
 
   function openOrderTracking(orderId){
     const order = state.orders.find(o=>o.id===orderId);
-    const steps = ["Awaiting farm confirmation","Confirmed","Ready for pickup","Scheduled for delivery","In transit","Delivered"];
+    const steps = ["Awaiting farm confirmation","Confirmed","Ready for pickup","Waiting for rider acceptance","Scheduled for delivery","In transit","Delivered"];
     const index = steps.indexOf(order.status);
     const cancelled = ["Cancelled","Rejected"].includes(order.status);
 
@@ -2147,6 +2405,7 @@
         </div>
       `}
 
+      ${renderBuyerLiveTracking(order)}
       ${orderItemList(order)}
       <div class="summary">
         <div class="summary-row"><span>Produce</span><strong>${money(order.produceCost)}</strong></div>
@@ -2156,11 +2415,146 @@
     `);
   }
 
+
+  function routeForOrder(order){
+    return order?.routeId ? state.routes.find(route=>route.id===order.routeId) : null;
+  }
+
+  function currentRouteSegment(route){
+    if(!route) return null;
+    const statuses = route.legStatus || {};
+    if(route.status==="Delivered") return {key:"completed",label:"Delivered",rider:"Completed",location:"Delivered to buyer area"};
+    if(statuses.leg1!=="Completed") return {key:"leg1",label:"Farm pickup",rider:route.riderClaims?.leg1 || "Waiting for rider",location:"Farm supplier / pickup hub"};
+    if(statuses.leg2!=="Completed") return {key:"leg2",label:"Hub transfer",rider:route.riderClaims?.leg2 || "Waiting for rider",location:"Pickup hub / area hub"};
+    if(statuses.leg3!=="Completed") return {key:"leg3",label:"Final-mile delivery",rider:route.riderClaims?.leg3 || "Waiting for rider",location:"Area hub / buyer area"};
+    return {key:"completed",label:"Delivered",rider:"Completed",location:"Delivered to buyer area"};
+  }
+
+  function etaRangeForOrder(order,route){
+    if(["Cancelled","Rejected"].includes(order.status)) return "Not available";
+    if(!route) return "After route is published";
+    if(route.status==="Open for rider acceptance") return "60–90 min after riders accept";
+    if(route.status==="Ready to start") return "45–70 min";
+    if(route.status==="Delivered") return "Delivered";
+    const statuses = route.legStatus || {};
+    if(statuses.leg1!=="Completed") return "35–55 min";
+    if(statuses.leg2!=="Completed") return "20–40 min";
+    if(statuses.leg3!=="Completed") return "10–25 min";
+    return "Delivered soon";
+  }
+
+  function riderLocationForOrder(order,route){
+    if(!route){
+      return {
+        rider:"Not assigned yet",
+        location:"Order is not published to the rider task board yet.",
+        activity:"Waiting for shared route publication",
+        activeLegKey:null
+      };
+    }
+    const current = currentRouteSegment(route);
+    const latest = latestRouteSearch(route,current?.key);
+    if(latest){
+      return {
+        rider:latest.rider,
+        location:latest.location,
+        activity:`Searched ${latest.pointLabel}`,
+        activeLegKey:current?.key
+      };
+    }
+    return {
+      rider:current?.rider || "Waiting for rider",
+      location:current?.location || "Route not active yet",
+      activity:current?.label || route.status,
+      activeLegKey:current?.key
+    };
+  }
+
+  function renderBuyerLiveTracking(order){
+    const route = routeForOrder(order);
+    const orders = route ? route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean) : [order];
+    const location = riderLocationForOrder(order,route);
+    const eta = etaRangeForOrder(order,route);
+
+    return `
+      <div class="tracking-live-card">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap">
+          <div>
+            <span class="tag">Live delivery view</span>
+            <h3 style="margin:8px 0 4px">Rider location and ETA</h3>
+            <p class="meta" style="margin:0">This gives the restaurant a clear view of where the produce is, reducing uncertainty during delivery.</p>
+          </div>
+          <span class="eta-pill">ETA: ${eta}</span>
+        </div>
+        <div class="tracking-grid">
+          <div class="tracking-tile"><span>Current rider</span><strong>${location.rider}</strong></div>
+          <div class="tracking-tile"><span>Latest location</span><strong>${location.location}</strong></div>
+          <div class="tracking-tile"><span>Current activity</span><strong>${location.activity}</strong></div>
+        </div>
+        ${route ? renderRouteMap(route,orders,location.activeLegKey) : `
+          <div class="info-notice" style="margin-top:12px;margin-bottom:0">
+            The order is not on a shared route yet. Once the farm marks it ready and the route is published, rider location and ETA will appear here.
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  function openOrderCostDetails(orderId){
+    const order = state.orders.find(o=>o.id===orderId);
+    if(!order) return;
+    const items = orderItems(order);
+    const firstProduct = state.products.find(p=>p.id===items[0]?.productId) || order;
+    const breakdown = deliveryPricingBreakdown(firstProduct,order.area,order.qty);
+    openModal(`
+      <div class="modal-head">
+        <div><span class="tag">Cost details</span><h2>Order ${order.id}</h2><p class="meta">${order.farm} · ${order.area} · ${order.deliveryDay}</p></div>
+        <button class="close" onclick="closeModal()">✕</button>
+      </div>
+
+      <div class="cost-detail-card">
+        <strong>Produce items</strong>
+        <ul class="farm-group-items">
+          ${items.map(item=>`<li>${item.product} · ${item.qty} kg · ${money(item.produceCost || item.price*item.qty)}</li>`).join("")}
+        </ul>
+      </div>
+
+      <div class="summary">
+        <div class="summary-row"><span>Produce total</span><strong>${money(order.produceCost)}</strong></div>
+        <div class="summary-row"><span>Delivery fee</span><strong>${money(order.deliveryFee)}</strong></div>
+        <div class="summary-row total"><span>Order total</span><strong>${money(order.total)}</strong></div>
+      </div>
+
+      <div class="pricing-rule-grid">
+        <div class="pricing-rule">
+          <strong>Base fee</strong>
+          SGD 4.50 includes the first 10 km and first 10 kg.
+        </div>
+        <div class="pricing-rule">
+          <strong>Extra distance</strong>
+          After 10 km, add SGD 0.25 per extra km.
+        </div>
+        <div class="pricing-rule">
+          <strong>Extra weight</strong>
+          After 10 kg, add SGD 0.05 per extra kg.
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="summary-row"><span>Pricing basis</span><strong>${breakdown.totalDistance} km total distance · ${breakdown.weight} kg</strong></div>
+        <div class="summary-row"><span>Shared route rule</span><strong>Same area + same delivery day share one route fee</strong></div>
+        <div class="summary-row"><span>Stored delivery fee</span><strong>${money(order.deliveryFee)}</strong></div>
+      </div>
+    `,true);
+  }
+
+
   function trackingDescription(step,order){
     const descriptions = {
       "Awaiting farm confirmation":"The farm is reviewing quantity and availability.",
       "Confirmed":"The farm accepted the order.",
       "Ready for pickup":"Produce is packed and ready for collection.",
+      "Waiting for rider acceptance":"The shared route is published and riders are accepting relay tasks.",
       "Scheduled for delivery":order.routeId ? `Assigned to relay route ${order.routeId}.` : "A shared route has been scheduled.",
       "In transit":"The segmented relay delivery is moving through farm pickup, hub transfer and final-mile delivery.",
       "Delivered":"Delivery has been completed."
@@ -2449,7 +2843,7 @@
       available.innerHTML = `
         <div class="panel">
           <div class="panel-head">
-            <div><h3>Open relay tasks</h3><p>Riders choose a route leg and use the map search to check pickup and destination</p></div>
+            <div><h3>Open relay tasks</h3><p>Riders choose a route leg, search the virtual map, and update their delivery progress</p></div>
             <span class="tag">Self-accept model</span>
           </div>
           <div class="info-notice">The coordinator publishes a shared route, but does not assign riders. Each rider accepts a suitable leg from this task board and can search pickup or destination on the route map. This better reflects platform-based collective participation.</div>
