@@ -321,6 +321,117 @@
       padding:12px;
       overflow:hidden;
     }
+
+    .map-water{
+      fill:none;
+      stroke:#b7dce6;
+      stroke-width:18;
+      stroke-linecap:round;
+      opacity:.75;
+    }
+    .map-park{
+      fill:#dfeedd;
+      stroke:#c6dec2;
+      stroke-width:1;
+      opacity:.92;
+    }
+    .map-district{
+      fill:#ffffff;
+      stroke:#d9e6d5;
+      stroke-width:1;
+      opacity:.88;
+    }
+    .map-district.soft{
+      fill:#f4faf1;
+    }
+    .district-label{
+      font-size:12px;
+      font-weight:800;
+      fill:#657367;
+      text-anchor:middle;
+    }
+    .district-sub{
+      font-size:10px;
+      fill:#879187;
+      text-anchor:middle;
+    }
+    .map-major-road{
+      fill:none;
+      stroke:#d5ddcf;
+      stroke-width:16;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      opacity:.92;
+    }
+    .map-road-inner{
+      fill:none;
+      stroke:#ffffff;
+      stroke-width:9;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      opacity:.95;
+    }
+    .delivery-route-bg{
+      fill:none;
+      stroke:#d9ead5;
+      stroke-width:18;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      opacity:.9;
+    }
+    .delivery-route{
+      fill:none;
+      stroke:#2f6b3c;
+      stroke-width:7;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      stroke-dasharray:14 9;
+    }
+    .map-hub-ring{
+      fill:rgba(47,107,60,.08);
+      stroke:#9fc497;
+      stroke-width:2;
+      stroke-dasharray:7 6;
+    }
+    .driver-marker-box{
+      fill:#1f3424;
+      stroke:#ffffff;
+      stroke-width:2;
+      filter:url(#softShadow);
+    }
+    .driver-marker-label{
+      font-size:15px;
+      fill:#ffffff;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+    .map-legend{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .map-legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:999px;
+      padding:6px 9px;
+    }
+    .legend-dot{
+      width:10px;height:10px;border-radius:999px;background:var(--brand);display:inline-block;
+    }
+    .legend-road{
+      width:18px;height:4px;border-radius:999px;background:#d5ddcf;display:inline-block;
+    }
+    .legend-water{
+      width:18px;height:4px;border-radius:999px;background:#b7dce6;display:inline-block;
+    }
+
     .virtual-map-svg{
       width:100%;
       height:auto;
@@ -370,7 +481,7 @@
       fill:#647066;
       text-anchor:middle;
     }
-    .rider-marker-text{
+    .driver-marker-text{
       font-size:24px;
       text-anchor:middle;
       dominant-baseline:central;
@@ -633,13 +744,13 @@
     }
 
 
-    .rider-task-grid{
+    .driver-task-grid{
       display:grid;
       grid-template-columns:repeat(3,1fr);
       gap:12px;
       margin-top:12px;
     }
-    .rider-task-card{
+    .driver-task-card{
       border:1px solid var(--line);
       background:#fff;
       border-radius:15px;
@@ -648,7 +759,7 @@
       gap:8px;
       box-shadow:var(--shadow-soft);
     }
-    .rider-task-card.claimed{background:linear-gradient(135deg,#fff,#f5f8f3)}
+    .driver-task-card.claimed{background:linear-gradient(135deg,#fff,#f5f8f3)}
     .claim-badge{
       display:inline-flex;
       align-items:center;
@@ -663,7 +774,7 @@
     .claim-badge.open{background:var(--warning-bg);color:var(--warning)}
     .claim-badge.done{background:#eef4ea;color:var(--brand)}
     .claim-badge.locked{background:var(--info-bg);color:var(--info)}
-    @media(max-width:960px){.rider-task-grid{grid-template-columns:1fr}}
+    @media(max-width:960px){.driver-task-grid{grid-template-columns:1fr}}
 
     .profile-switch{
       display:flex;
@@ -828,12 +939,12 @@
         <div class="hero-card">
           <span class="eyebrow">Group Purchasing + Shared Delivery + Collective Wisdom</span>
           <h1>Fresh produce, smarter group delivery.</h1>
-          <p>FarmLink Direct is planned as a Singapore-based platform using SGD for financial planning, with the first MVP pilot in Kuala Lumpur. It connects farm suppliers with restaurants, hotels and cafés, while available riders self-accept relay delivery tasks through a shared task board.</p>
+          <p>FarmLink Direct is planned as a Singapore-based platform using SGD for financial planning, with the first MVP pilot in Kuala Lumpur. It connects farm suppliers with restaurants, hotels and cafés, while available drivers self-accept delivery route legs through a shared task board.</p>
           <div class="hero-actions">
             <button class="primary" onclick="selectRole('buyer')">Browse produce</button>
             <button class="secondary" onclick="selectRole('farm')">Manage a farm</button>
             <button class="secondary" onclick="selectRole('admin')">Publish delivery tasks</button>
-            <button class="secondary" onclick="selectRole('rider')">Rider task board</button>
+            <button class="secondary" onclick="selectRole('driver')">Driver task board</button>
           </div>
         </div>
         <div class="hero-visual">
@@ -841,7 +952,7 @@
             <div class="flow-row"><span><strong>1. Farms list produce</strong><br><small>Price, stock, group target and delivery day</small></span><span class="flow-badge">🚜</span></div>
             <div class="flow-row"><span><strong>2. Businesses order together</strong><br><small>Ordered quantity moves toward the group target</small></span><span class="flow-badge">🤝</span></div>
             <div class="flow-row"><span><strong>3. Farms confirm supply</strong><br><small>Confirmed orders enter the delivery pool</small></span><span class="flow-badge">📦</span></div>
-            <div class="flow-row"><span><strong>4. Riders add route wisdom</strong><br><small>Zone tags and local knowledge improve shared delivery</small></span><span class="flow-badge">🗺️</span></div>
+            <div class="flow-row"><span><strong>4. Drivers add route wisdom</strong><br><small>Zone tags and local knowledge improve shared delivery</small></span><span class="flow-badge">🗺️</span></div>
           </div>
         </div>
       </div>
@@ -863,8 +974,8 @@
         </article>
         <article class="wisdom-card">
           <div class="wisdom-icon">🧠</div>
-          <h3>Rider wisdom</h3>
-          <p>Inspired by relay delivery systems, riders use local route knowledge and simple zone codes to refine the delivery sequence.</p>
+          <h3>Driver route wisdom</h3>
+          <p>Inspired by relay delivery systems, drivers use local route knowledge and simple zone codes to refine the delivery sequence.</p>
         </article>
       </div>
 
@@ -884,14 +995,14 @@
         <article class="role-card">
           <div class="role-icon">🗺️</div>
           <h3>Platform Delivery Coordinator</h3>
-          <p>Group compatible orders, publish relay tasks, monitor rider acceptance and update delivery progress.</p>
+          <p>Group compatible orders, publish delivery legs, monitor driver acceptance and update delivery progress.</p>
           <button class="primary" onclick="selectRole('admin')">Continue as coordinator</button>
         </article>
         <article class="role-card">
           <div class="role-icon">🚴</div>
-          <h3>Rider</h3>
+          <h3>Driver</h3>
           <p>View open pickup, hub-transfer and final-mile tasks, then self-accept suitable delivery legs.</p>
-          <button class="primary" onclick="selectRole('rider')">Continue as rider</button>
+          <button class="primary" onclick="selectRole('driver')">Continue as driver</button>
         </article>
       </div>
     </section>
@@ -990,47 +1101,51 @@
 
 
 
-    <section id="riderView" class="hidden">
+    <section id="driverView" class="hidden">
       <div class="dashboard-head">
         <div>
-          <h2>Rider Task Board</h2>
-          <p id="riderContext">Aina Rider · Self-claim delivery tasks</p>
+          <h2>Driver Task Board</h2>
+          <p id="driverContext">Aina Delivery Driver · Self-claim delivery legs</p>
         </div>
         <div class="profile-switch">
-          <label for="riderProfileSelect">View as rider</label>
-          <select id="riderProfileSelect" onchange="switchRiderProfile(this.value)"></select>
-          <button class="primary" onclick="setRiderTab('available')">Find open tasks</button>
+          <label for="driverProfileSelect">View as driver</label>
+          <select id="driverProfileSelect" onchange="switchDriverProfile(this.value)"></select>
+          <button class="primary" onclick="setDriverTab('available')">Find open tasks</button>
         </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-rider-tab="available" onclick="setRiderTab('available')">Available tasks</button>
-        <button class="tab" data-rider-tab="mine" onclick="setRiderTab('mine')">My accepted tasks</button>
+        <button class="tab active" data-driver-tab="available" onclick="setDriverTab('available')">Available tasks</button>
+        <button class="tab" data-driver-tab="mine" onclick="setDriverTab('mine')">My accepted tasks</button>
       </div>
 
       <div class="stats">
-        <div class="stat"><span>Open relay tasks</span><strong id="riderOpenStat">0</strong></div>
-        <div class="stat"><span>My accepted tasks</span><strong id="riderMineStat">0</strong></div>
-        <div class="stat"><span>Tasks in progress</span><strong id="riderProgressStat">0</strong></div>
-        <div class="stat"><span>My completed tasks</span><strong id="riderCompleteStat">0</strong></div>
+        <div class="stat"><span>Open delivery legs</span><strong id="driverOpenStat">0</strong></div>
+        <div class="stat"><span>My accepted tasks</span><strong id="driverMineStat">0</strong></div>
+        <div class="stat"><span>Tasks in progress</span><strong id="driverProgressStat">0</strong></div>
+        <div class="stat"><span>My completed tasks</span><strong id="driverCompleteStat">0</strong></div>
       </div>
 
-      <div id="riderAvailableTasks"></div>
-      <div id="riderMyTasks" class="hidden"></div>
+      <div id="driverAvailableTasks"></div>
+      <div id="driverMyTasks" class="hidden"></div>
     </section>
 
     <section id="adminView" class="hidden">
       <div class="dashboard-head">
         <div>
           <h2>Kuala Lumpur Delivery Task Dashboard</h2>
-          <p>Publish confirmed KL orders as open rider tasks and monitor acceptance</p>
+          <p>Publish confirmed KL orders as open driver tasks and monitor acceptance</p>
         </div>
         <button class="primary" onclick="openCreateRoute()">Publish shared route</button>
       </div>
 
+      <div class="info-notice">
+        <strong>MVP note:</strong> In this demo, the coordinator manually publishes grouped orders for presentation control. In a future version, the system will automatically consolidate orders once group targets are reached.
+      </div>
+
       <div class="tabs">
         <button class="tab active" data-admin-tab="pool" onclick="setAdminTab('pool')">Ready order pool</button>
-        <button class="tab" data-admin-tab="wisdom" onclick="setAdminTab('wisdom')">Rider wisdom</button>
+        <button class="tab" data-admin-tab="wisdom" onclick="setAdminTab('wisdom')">Driver route wisdom</button>
         <button class="tab" data-admin-tab="routes" onclick="setAdminTab('routes')">Published routes</button>
       </div>
 
@@ -1084,11 +1199,11 @@
     {id:"riverbank",name:"Riverbank Produce",origin:"Semenyih, Selangor"}
   ];
 
-  const riderProfiles = [
-    {id:"rider-aina",name:"Aina Rider",area:"Bukit Bintang",vehicle:"Motorbike",strength:"Farm pickup and café deliveries"},
-    {id:"rider-daniel",name:"Daniel Relay",area:"KLCC",vehicle:"Van",strength:"Hub-to-hub produce transfer"},
-    {id:"rider-priya",name:"Priya Express",area:"Bangsar",vehicle:"Motorbike",strength:"Final-mile hospitality drops"},
-    {id:"rider-arif",name:"Arif Logistics",area:"Mid Valley / Seputeh",vehicle:"Van",strength:"Bulk restaurant deliveries"}
+  const driverProfiles = [
+    {id:"driver-aina",name:"Aina Delivery Driver",area:"Bukit Bintang",vehicle:"Refrigerated Van",strength:"Farm pickup and chilled produce handling"},
+    {id:"driver-daniel",name:"Daniel Route Driver",area:"KLCC",vehicle:"Light Truck",strength:"Hub-to-hub produce transfer"},
+    {id:"driver-priya",name:"Priya Final-mile Driver",area:"Bangsar",vehicle:"Box Van",strength:"Hospitality drop-offs and loading-bay coordination"},
+    {id:"driver-arif",name:"Arif Logistics Driver",area:"Mid Valley / Seputeh",vehicle:"Refrigerated Van",strength:"Bulk restaurant deliveries"}
   ];
 
   const seedState = {
@@ -1100,12 +1215,14 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v12_driver_map_reset_state";
+
   let state = loadState();
   let activeRole = null;
   let buyerTab = "market";
   let farmTab = "listings";
   let adminTab = "pool";
-  let riderTab = "available";
+  let driverTab = "available";
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -1114,15 +1231,20 @@
 
   function loadState(){
     try{
-      const saved = localStorage.getItem("farmlink_direct_kl_demo_v11_tracking_map_cost_state");
+      const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : clone(seedState);
     }catch(error){
+      console.warn("Saved data could not be loaded, so the demo is using seed data.", error);
       return clone(seedState);
     }
   }
 
   function saveState(){
-    localStorage.setItem("farmlink_direct_kl_demo_v11_tracking_map_cost_state", JSON.stringify(state));
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(error){
+      console.warn("Demo data could not be saved in this browser.", error);
+    }
   }
 
   ensureStateDefaults();
@@ -1254,8 +1376,8 @@
     if(!state.farmProfile || !state.farmProfile.id){
       state.farmProfile = clone(farmProfiles[0]);
     }
-    if(!state.riderProfile || !state.riderProfile.id){
-      state.riderProfile = clone(riderProfiles[0]);
+    if(!state.driverProfile || !state.driverProfile.id){
+      state.driverProfile = clone(driverProfiles[0]);
     }
     state.cart.forEach(item=>{
       if(!item.buyer) item.buyer = state.buyerProfile.name;
@@ -1265,10 +1387,10 @@
       }
     });
     state.routes.forEach(route=>{
-      if(!route.riderClaims) route.riderClaims = {};
+      if(!route.driverClaims) route.driverClaims = {};
       if(!route.legStatus) route.legStatus = {};
-      if(!route.riderSearches) route.riderSearches = {};
-      if(route.status==="Scheduled") route.status = Object.keys(route.riderClaims).length ? "Ready to start" : "Open for rider acceptance";
+      if(!route.driverSearches) route.driverSearches = {};
+      if(route.status==="Scheduled") route.status = Object.keys(route.driverClaims).length ? "Ready to start" : "Open for driver acceptance";
       const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
       route.relaySegments = buildRelaySegments(route,orders);
     });
@@ -1283,16 +1405,16 @@
     if(farmSelect){
       farmSelect.innerHTML = farmProfiles.map(profile=>`<option value="${profile.id}" ${profile.id===state.farmProfile.id?"selected":""}>${profile.name} · ${profile.origin}</option>`).join("");
     }
-    const riderSelect = $("#riderProfileSelect");
-    if(riderSelect){
-      riderSelect.innerHTML = riderProfiles.map(profile=>`<option value="${profile.id}" ${profile.id===state.riderProfile.id?"selected":""}>${profile.name} · ${profile.area} · ${profile.vehicle}</option>`).join("");
+    const driverSelect = $("#driverProfileSelect");
+    if(driverSelect){
+      driverSelect.innerHTML = driverProfiles.map(profile=>`<option value="${profile.id}" ${profile.id===state.driverProfile.id?"selected":""}>${profile.name} · ${profile.area} · ${profile.vehicle}</option>`).join("");
     }
     const buyerContext = $("#buyerContext");
     if(buyerContext) buyerContext.textContent = `${state.buyerProfile.name} · ${state.buyerProfile.area} · Observer view`;
     const farmContext = $("#farmContext");
     if(farmContext) farmContext.textContent = `${state.farmProfile.name} · ${state.farmProfile.origin} · Observer view`;
-    const riderContext = $("#riderContext");
-    if(riderContext) riderContext.textContent = `${state.riderProfile.name} · ${state.riderProfile.area} · ${state.riderProfile.vehicle} · Self-claim view`;
+    const driverContext = $("#driverContext");
+    if(driverContext) driverContext.textContent = `${state.driverProfile.name} · ${state.driverProfile.area} · ${state.driverProfile.vehicle} · Self-claim view`;
   }
 
   function switchBuyerProfile(profileId){
@@ -1313,13 +1435,13 @@
     showToast(`Farm view switched to ${profile.name}.`);
   }
 
-  function switchRiderProfile(profileId){
-    const profile = riderProfiles.find(p=>p.id===profileId);
+  function switchDriverProfile(profileId){
+    const profile = driverProfiles.find(p=>p.id===profileId);
     if(!profile) return;
-    state.riderProfile = clone(profile);
+    state.driverProfile = clone(profile);
     saveState();
     refreshAll();
-    showToast(`Rider view switched to ${profile.name}.`);
+    showToast(`Driver view switched to ${profile.name}.`);
   }
 
   function zoneDistanceKm(area){
@@ -1391,8 +1513,8 @@
   }
 
 
-  function currentRider(){
-    return state.riderProfile || riderProfiles[0];
+  function currentDriver(){
+    return state.driverProfile || driverProfiles[0];
   }
 
   function legKey(index){
@@ -1400,7 +1522,7 @@
   }
 
   function allRouteLegsClaimed(route){
-    const claims = route.riderClaims || {};
+    const claims = route.driverClaims || {};
     return ["leg1","leg2","leg3"].every(key=>Boolean(claims[key]));
   }
 
@@ -1411,38 +1533,38 @@
 
   function updateRouteAcceptanceStatus(route){
     if(route.status==="Delivered" || route.status==="In transit") return;
-    route.status = allRouteLegsClaimed(route) ? "Ready to start" : "Open for rider acceptance";
+    route.status = allRouteLegsClaimed(route) ? "Ready to start" : "Open for driver acceptance";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     orders.forEach(order=>{
-      order.status = route.status==="Ready to start" ? "Scheduled for delivery" : "Waiting for rider acceptance";
+      order.status = route.status==="Ready to start" ? "Scheduled for delivery" : "Waiting for driver acceptance";
     });
   }
 
-  function acceptRiderTask(routeId,segmentIndex){
+  function acceptDriverTask(routeId,segmentIndex){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     if(["In transit","Delivered"].includes(route.status)){
-      showToast("This route has already started, so new rider claims are closed.");
+      showToast("This route has already started, so new driver claims are closed.");
       return;
     }
     const key = legKey(segmentIndex);
-    route.riderClaims = route.riderClaims || {};
+    route.driverClaims = route.driverClaims || {};
     route.legStatus = route.legStatus || {};
-    if(route.riderClaims[key]){
-      showToast("This task has already been accepted by another rider.");
+    if(route.driverClaims[key]){
+      showToast("This task has already been accepted by another driver.");
       return;
     }
-    route.riderClaims[key] = currentRider().name;
+    route.driverClaims[key] = currentDriver().name;
     route.legStatus[key] = "Accepted";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
     updateRouteAcceptanceStatus(route);
     saveState();
     refreshAll();
-    showToast(`${currentRider().name} accepted ${route.relaySegments[segmentIndex].leg} on Route ${route.id}.`);
+    showToast(`${currentDriver().name} accepted ${route.relaySegments[segmentIndex].leg} on Route ${route.id}.`);
   }
 
-  function releaseRiderTask(routeId,segmentIndex){
+  function releaseDriverTask(routeId,segmentIndex){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     const key = legKey(segmentIndex);
@@ -1450,39 +1572,39 @@
       showToast("This route is already active or completed, so accepted tasks cannot be released.");
       return;
     }
-    if(route.riderClaims?.[key] !== currentRider().name){
-      showToast("Only the rider who accepted this task can release it before the route starts.");
+    if(route.driverClaims?.[key] !== currentDriver().name){
+      showToast("Only the driver who accepted this task can release it before the route starts.");
       return;
     }
-    delete route.riderClaims[key];
+    delete route.driverClaims[key];
     delete route.legStatus[key];
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
     updateRouteAcceptanceStatus(route);
     saveState();
     refreshAll();
-    showToast(`${currentRider().name} released the task.`);
+    showToast(`${currentDriver().name} released the task.`);
   }
 
-  function completeRiderTask(routeId,segmentIndex){
+  function completeDriverTask(routeId,segmentIndex){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     const key = legKey(segmentIndex);
-    if(route.riderClaims?.[key] !== currentRider().name){
-      showToast("Only the rider who accepted this task can complete it.");
+    if(route.driverClaims?.[key] !== currentDriver().name){
+      showToast("Only the driver who accepted this task can complete it.");
       return;
     }
     if(route.status!=="In transit"){
-      showToast("The route must be started before rider tasks can be completed.");
+      showToast("The route must be started before driver tasks can be completed.");
       return;
     }
     route.legStatus[key] = "Completed";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     const completedSegment = buildRelaySegments(route,orders)[segmentIndex];
-    route.riderSearches = route.riderSearches || {};
+    route.driverSearches = route.driverSearches || {};
     if(completedSegment){
-      route.riderSearches[key] = {
-        rider:currentRider().name,
+      route.driverSearches[key] = {
+        driver:currentDriver().name,
         point:"destination",
         pointLabel:"completed destination",
         location:completedSegment.to,
@@ -1494,9 +1616,9 @@
     if(allRouteLegsCompleted(route)){
       route.status = "Delivered";
       orders.forEach(order=>order.status="Delivered");
-      showToast(`All rider tasks completed. Route ${route.id} is delivered.`);
+      showToast(`All driver tasks completed. Route ${route.id} is delivered.`);
     }else{
-      showToast(`${currentRider().name} completed ${route.relaySegments[segmentIndex].leg}.`);
+      showToast(`${currentDriver().name} completed ${route.relaySegments[segmentIndex].leg}.`);
     }
     saveState();
     refreshAll();
@@ -1523,7 +1645,7 @@
   }
 
   function latestRouteSearch(route,activeLegKey=null){
-    const searches = route?.riderSearches || {};
+    const searches = route?.driverSearches || {};
     if(activeLegKey && searches[activeLegKey]) return searches[activeLegKey];
     const values = Object.values(searches);
     return values.length ? values[values.length-1] : null;
@@ -1531,10 +1653,10 @@
 
   function mapCoordinate(pointId){
     const coords = {
-      farm:{x:78,y:205},
-      pickup:{x:235,y:160},
-      area:{x:405,y:118},
-      buyer:{x:560,y:78}
+      farm:{x:92,y:318},
+      pickup:{x:266,y:265},
+      area:{x:462,y:184},
+      buyer:{x:666,y:118}
     };
     return coords[pointId] || coords.area;
   }
@@ -1542,27 +1664,72 @@
   function renderVirtualMapSvg(route,points,activePoint){
     const activeCoord = activePoint ? mapCoordinate(activePoint) : null;
     return `
-      <svg class="virtual-map-svg" viewBox="0 0 640 280" role="img" aria-label="Virtual Kuala Lumpur pilot delivery map">
-        <path class="road-line secondary-road" d="M65 65 C150 45, 260 70, 355 40 S520 28,590 55"></path>
-        <path class="road-line secondary-road" d="M95 235 C185 255, 285 225, 372 212 S510 196,585 220"></path>
-        <path class="road-line secondary-road" d="M185 40 C178 105, 172 170, 132 235"></path>
-        <path class="road-line secondary-road" d="M455 45 C438 96, 432 154, 470 232"></path>
-        <path class="road-line" d="M78 205 C150 188, 178 170, 235 160 C315 148, 338 126, 405 118 C468 108, 512 90, 560 78"></path>
+      <svg class="virtual-map-svg" viewBox="0 0 760 420" role="img" aria-label="Illustrative virtual Kuala Lumpur pilot logistics map">
+        <defs>
+          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1f3424" flood-opacity=".22"/>
+          </filter>
+          <linearGradient id="mapBg" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%" stop-color="#f8fbf5"/>
+            <stop offset="100%" stop-color="#eef6ea"/>
+          </linearGradient>
+        </defs>
+
+        <rect x="0" y="0" width="760" height="420" fill="url(#mapBg)"/>
+        <path class="map-water" d="M34 112 C132 70, 188 104, 252 82 C334 54, 407 72, 486 52 C575 28, 642 44, 725 28"/>
+        <path class="map-water" d="M66 382 C160 346, 216 366, 304 338 C398 308, 505 326, 700 292"/>
+
+        <rect class="map-district soft" x="34" y="218" width="166" height="128" rx="24"/>
+        <rect class="map-district" x="208" y="205" width="162" height="126" rx="24"/>
+        <rect class="map-district soft" x="386" y="130" width="168" height="128" rx="24"/>
+        <rect class="map-district" x="570" y="72" width="146" height="118" rx="24"/>
+        <rect class="map-park" x="486" y="268" width="178" height="74" rx="26"/>
+        <rect class="map-park" x="102" y="58" width="94" height="58" rx="22"/>
+
+        <text class="district-label" x="116" y="244">Farm belt</text>
+        <text class="district-sub" x="116" y="260">supplier origin</text>
+        <text class="district-label" x="290" y="228">Pickup zone</text>
+        <text class="district-sub" x="290" y="244">farm hub</text>
+        <text class="district-label" x="470" y="154">KL area hub</text>
+        <text class="district-sub" x="470" y="170">sorting point</text>
+        <text class="district-label" x="642" y="92">${route.area}</text>
+        <text class="district-sub" x="642" y="108">buyer district</text>
+        <text class="district-label" x="574" y="310">Urban logistics buffer</text>
+
+        <path class="map-major-road" d="M48 74 C150 116, 222 118, 318 104 S498 86, 704 122"/>
+        <path class="map-road-inner" d="M48 74 C150 116, 222 118, 318 104 S498 86, 704 122"/>
+        <path class="map-major-road" d="M126 378 C188 300, 256 278, 332 252 S500 190, 692 170"/>
+        <path class="map-road-inner" d="M126 378 C188 300, 256 278, 332 252 S500 190, 692 170"/>
+        <path class="map-major-road" d="M238 56 C258 132, 250 210, 282 344"/>
+        <path class="map-road-inner" d="M238 56 C258 132, 250 210, 282 344"/>
+        <path class="map-major-road" d="M510 82 C498 146, 510 214, 560 356"/>
+        <path class="map-road-inner" d="M510 82 C498 146, 510 214, 560 356"/>
+
+        <circle class="map-hub-ring" cx="266" cy="265" r="55"/>
+        <circle class="map-hub-ring" cx="462" cy="184" r="58"/>
+
+        <path class="delivery-route-bg" d="M92 318 C160 292, 201 282, 266 265 C352 242, 386 207, 462 184 C544 160, 595 136, 666 118"/>
+        <path class="delivery-route" d="M92 318 C160 292, 201 282, 266 265 C352 242, 386 207, 462 184 C544 160, 595 136, 666 118"/>
+
         ${points.map(point=>{
           const c = mapCoordinate(point.id);
           const active = point.id===activePoint;
           return `
-            <g>
-              <circle class="map-dot ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="20"></circle>
+            <g filter="url(#softShadow)">
+              <circle class="map-dot ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="23"></circle>
               <text class="map-num ${active?"active":""}" x="${c.x}" y="${c.y}">${point.icon}</text>
-              <text class="map-label" x="${c.x}" y="${c.y+37}">${point.label}</text>
-              <text class="map-sub" x="${c.x}" y="${c.y+53}">${point.value.length>24 ? point.value.slice(0,24)+"…" : point.value}</text>
+            </g>
+            <g>
+              <text class="map-label" x="${c.x}" y="${c.y+43}">${point.label}</text>
+              <text class="map-sub" x="${c.x}" y="${c.y+60}">${point.value.length>28 ? point.value.slice(0,28)+"…" : point.value}</text>
             </g>
           `;
         }).join("")}
+
         ${activeCoord ? `
-          <g transform="translate(${activeCoord.x},${activeCoord.y-34})">
-            <text class="rider-marker-text" x="0" y="0">🏍️</text>
+          <g transform="translate(${activeCoord.x},${activeCoord.y-48})">
+            <rect class="driver-marker-box" x="-20" y="-15" width="40" height="30" rx="12"/>
+            <text class="driver-marker-label" x="0" y="1">🚚</text>
           </g>
         ` : ""}
       </svg>
@@ -1577,11 +1744,16 @@
     return `
       <div class="route-map-card">
         <div class="route-map-title">
-          <strong>Virtual KL pilot map</strong>
+          <strong>Virtual KL logistics map</strong>
           <span class="route-code">${route.zoneCode||routeZoneCode(route.area)}</span>
         </div>
         <div class="virtual-map-wrap">
           ${renderVirtualMapSvg(route,points,activePoint)}
+          <div class="map-legend">
+            <span><i class="legend-dot"></i> Route points</span>
+            <span><i class="legend-road"></i> City roads</span>
+            <span><i class="legend-water"></i> Water / urban boundary</span>
+          </div>
           <div class="map-location-grid">
             ${points.map(point=>`
               <div class="map-location-chip ${point.id===activePoint?"active":""}">
@@ -1593,15 +1765,15 @@
         </div>
         <div class="map-search-result">
           ${latestSearch
-            ? `<strong>Map search result:</strong> ${latestSearch.rider} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
-            : `<strong>Map search result:</strong> No rider search yet. This is an illustrative virtual map for the MVP because the farm and hub data are prototype locations.`
+            ? `<strong>Map search result:</strong> ${latestSearch.driver} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
+            : `<strong>Map search result:</strong> No driver map search yet. This is an illustrative virtual logistics map for the MVP because the farm and hub data are prototype locations.`
           }
         </div>
       </div>
     `;
   }
 
-  function searchRiderLocation(routeId,segmentIndex,pointType){
+  function searchDriverLocation(routeId,segmentIndex,pointType){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     if(route.status==="Delivered"){
@@ -1613,9 +1785,9 @@
     if(!segment) return;
     const key = legKey(segmentIndex);
     const location = pointType==="pickup" ? segment.from : segment.to;
-    route.riderSearches = route.riderSearches || {};
-    route.riderSearches[key] = {
-      rider:currentRider().name,
+    route.driverSearches = route.driverSearches || {};
+    route.driverSearches[key] = {
+      driver:currentDriver().name,
       point:pointType,
       pointLabel:pointType==="pickup" ? "pickup location" : "destination",
       location,
@@ -1624,7 +1796,7 @@
     };
     saveState();
     refreshAll();
-    showToast(`${currentRider().name} searched ${location} on the route map.`);
+    showToast(`${currentDriver().name} searched ${location} on the route map.`);
   }
 
 
@@ -1660,13 +1832,13 @@
     const farmHub = pickupHubForFarm(primaryFarm);
     const zoneHub = hubForArea(route.area);
     const buyerNames = orders.map(o=>o.buyer).join(", ");
-    const claims = route.riderClaims || {};
+    const claims = route.driverClaims || {};
     const legStatus = route.legStatus || {};
     const statusFor = key => route.status==="Delivered" ? "Completed" : (legStatus[key] || (claims[key] ? "Accepted" : "Open"));
     return [
-      {key:"leg1",leg:"Leg 1",from:primaryFarm,to:farmHub,rider:claims.leg1 || "Open to claim",role:"Farm pickup",status:statusFor("leg1")},
-      {key:"leg2",leg:"Leg 2",from:farmHub,to:zoneHub,rider:claims.leg2 || "Open to claim",role:"Hub-to-hub relay",status:statusFor("leg2")},
-      {key:"leg3",leg:"Leg 3",from:zoneHub,to:buyerNames,rider:claims.leg3 || "Open to claim",role:"Final-mile delivery",status:statusFor("leg3")}
+      {key:"leg1",leg:"Leg 1",from:primaryFarm,to:farmHub,driver:claims.leg1 || "Open to claim",role:"Farm pickup",status:statusFor("leg1")},
+      {key:"leg2",leg:"Leg 2",from:farmHub,to:zoneHub,driver:claims.leg2 || "Open to claim",role:"Hub-to-hub relay",status:statusFor("leg2")},
+      {key:"leg3",leg:"Leg 3",from:zoneHub,to:buyerNames,driver:claims.leg3 || "Open to claim",role:"Final-mile delivery",status:statusFor("leg3")}
     ];
   }
 
@@ -1677,7 +1849,7 @@
       <div class="relay-segment">
         <strong>${segment.leg}: ${segment.role}</strong>
         <div>${segment.from} → ${segment.to}</div>
-        <span class="small">Rider: ${segment.rider}</span>
+        <span class="small">Driver: ${segment.driver}</span>
         <span class="small">Task status: ${segment.status}</span>
       </div>
     `).join("")}</div>`;
@@ -1705,7 +1877,7 @@
     return `${prefix}-${Math.floor(1000 + Math.random()*9000)}`;
   }
   function statusClass(status){
-    if(["Awaiting farm confirmation","Scheduled for delivery","Waiting for rider acceptance","Open for rider acceptance","Ready to start"].includes(status)) return "warning";
+    if(["Awaiting farm confirmation","Scheduled for delivery","Waiting for driver acceptance","Open for driver acceptance","Ready to start"].includes(status)) return "warning";
     if(["In transit"].includes(status)) return "info";
     if(["Cancelled","Rejected"].includes(status)) return "danger";
     return "";
@@ -1767,13 +1939,13 @@
   function selectRole(role){
     activeRole = role;
     $("#landing").classList.add("hidden");
-    ["buyerView","farmView","riderView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
+    ["buyerView","farmView","driverView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
     $("#switchRoleBtn").classList.remove("hidden");
 
     const map = {
       buyer:["buyerView","KL buyer account"],
       farm:["farmView","KL farm supplier account"],
-      rider:["riderView","Rider self-claim account"],
+      driver:["driverView","Driver self-claim account"],
       admin:["adminView","Admin account"]
     };
     $("#"+map[role][0]).classList.remove("hidden");
@@ -1781,14 +1953,14 @@
 
     if(role==="buyer"){ setBuyerTab(buyerTab); refreshBuyer(); }
     if(role==="farm"){ setFarmTab(farmTab); refreshFarm(); }
-    if(role==="rider"){ setRiderTab(riderTab); refreshRider(); }
+    if(role==="driver"){ setDriverTab(driverTab); refreshDriver(); }
     if(role==="admin"){ setAdminTab(adminTab); refreshAdmin(); }
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
   $("#switchRoleBtn").onclick = () => {
     activeRole = null;
-    ["buyerView","farmView","riderView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
+    ["buyerView","farmView","driverView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
     $("#landing").classList.remove("hidden");
     $("#switchRoleBtn").classList.add("hidden");
     $("#rolePill").textContent = "Welcome";
@@ -1809,17 +1981,45 @@
   };
 
   function resetAllData(){
+    const roleToRestore = activeRole;
+    try{
+      localStorage.removeItem(STORAGE_KEY);
+    }catch(error){
+      console.warn("Stored demo data could not be cleared, but in-memory data will still reset.", error);
+    }
+
     state = clone(seedState);
+    buyerTab = "market";
+    farmTab = "listings";
+    adminTab = "pool";
+    driverTab = "available";
+
+    ensureStateDefaults();
+    normaliseGroupData();
+    normaliseDeliveryFees();
     saveState();
     closeModal();
     refreshAll();
-    showToast("Original data restored.");
+
+    if(roleToRestore){
+      selectRole(roleToRestore);
+    }else{
+      ["buyerView","farmView","driverView","adminView"].forEach(id=>$("#"+id)?.classList.add("hidden"));
+      $("#landing")?.classList.remove("hidden");
+      $("#switchRoleBtn")?.classList.add("hidden");
+      setText("#rolePill","Welcome");
+    }
+
+    showToast("Original demo data restored.");
   }
+
+  window.resetAllData = resetAllData;
+  window.closeModal = closeModal;
 
   function refreshAll(){
     refreshBuyer();
     refreshFarm();
-    refreshRider();
+    refreshDriver();
     refreshAdmin();
   }
 
@@ -2324,7 +2524,7 @@
 
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>My orders</h3><p>View farm confirmation, rider location, ETA and delivery progress</p></div></div>
+        <div class="panel-head"><div><h3>My orders</h3><p>View farm confirmation, driver location, ETA and delivery progress</p></div></div>
         <div class="order-list">
           ${orders.length ? orders.map(order=>`
             <article class="order-card">
@@ -2380,7 +2580,7 @@
 
   function openOrderTracking(orderId){
     const order = state.orders.find(o=>o.id===orderId);
-    const steps = ["Awaiting farm confirmation","Confirmed","Ready for pickup","Waiting for rider acceptance","Scheduled for delivery","In transit","Delivered"];
+    const steps = ["Awaiting farm confirmation","Confirmed","Ready for pickup","Waiting for driver acceptance","Scheduled for delivery","In transit","Delivered"];
     const index = steps.indexOf(order.status);
     const cancelled = ["Cancelled","Rejected"].includes(order.status);
 
@@ -2423,17 +2623,17 @@
   function currentRouteSegment(route){
     if(!route) return null;
     const statuses = route.legStatus || {};
-    if(route.status==="Delivered") return {key:"completed",label:"Delivered",rider:"Completed",location:"Delivered to buyer area"};
-    if(statuses.leg1!=="Completed") return {key:"leg1",label:"Farm pickup",rider:route.riderClaims?.leg1 || "Waiting for rider",location:"Farm supplier / pickup hub"};
-    if(statuses.leg2!=="Completed") return {key:"leg2",label:"Hub transfer",rider:route.riderClaims?.leg2 || "Waiting for rider",location:"Pickup hub / area hub"};
-    if(statuses.leg3!=="Completed") return {key:"leg3",label:"Final-mile delivery",rider:route.riderClaims?.leg3 || "Waiting for rider",location:"Area hub / buyer area"};
-    return {key:"completed",label:"Delivered",rider:"Completed",location:"Delivered to buyer area"};
+    if(route.status==="Delivered") return {key:"completed",label:"Delivered",driver:"Completed",location:"Delivered to buyer area"};
+    if(statuses.leg1!=="Completed") return {key:"leg1",label:"Farm pickup",driver:route.driverClaims?.leg1 || "Waiting for driver",location:"Farm supplier / pickup hub"};
+    if(statuses.leg2!=="Completed") return {key:"leg2",label:"Hub transfer",driver:route.driverClaims?.leg2 || "Waiting for driver",location:"Pickup hub / area hub"};
+    if(statuses.leg3!=="Completed") return {key:"leg3",label:"Final-mile delivery",driver:route.driverClaims?.leg3 || "Waiting for driver",location:"Area hub / buyer area"};
+    return {key:"completed",label:"Delivered",driver:"Completed",location:"Delivered to buyer area"};
   }
 
   function etaRangeForOrder(order,route){
     if(["Cancelled","Rejected"].includes(order.status)) return "Not available";
     if(!route) return "After route is published";
-    if(route.status==="Open for rider acceptance") return "60–90 min after riders accept";
+    if(route.status==="Open for driver acceptance") return "60–90 min after drivers accept";
     if(route.status==="Ready to start") return "45–70 min";
     if(route.status==="Delivered") return "Delivered";
     const statuses = route.legStatus || {};
@@ -2443,11 +2643,11 @@
     return "Delivered soon";
   }
 
-  function riderLocationForOrder(order,route){
+  function driverLocationForOrder(order,route){
     if(!route){
       return {
-        rider:"Not assigned yet",
-        location:"Order is not published to the rider task board yet.",
+        driver:"Not assigned yet",
+        location:"Order is not published to the driver task board yet.",
         activity:"Waiting for shared route publication",
         activeLegKey:null
       };
@@ -2456,14 +2656,14 @@
     const latest = latestRouteSearch(route,current?.key);
     if(latest){
       return {
-        rider:latest.rider,
+        driver:latest.driver,
         location:latest.location,
         activity:`Searched ${latest.pointLabel}`,
         activeLegKey:current?.key
       };
     }
     return {
-      rider:current?.rider || "Waiting for rider",
+      driver:current?.driver || "Waiting for driver",
       location:current?.location || "Route not active yet",
       activity:current?.label || route.status,
       activeLegKey:current?.key
@@ -2473,7 +2673,7 @@
   function renderBuyerLiveTracking(order){
     const route = routeForOrder(order);
     const orders = route ? route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean) : [order];
-    const location = riderLocationForOrder(order,route);
+    const location = driverLocationForOrder(order,route);
     const eta = etaRangeForOrder(order,route);
 
     return `
@@ -2481,19 +2681,19 @@
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:start;flex-wrap:wrap">
           <div>
             <span class="tag">Live delivery view</span>
-            <h3 style="margin:8px 0 4px">Rider location and ETA</h3>
+            <h3 style="margin:8px 0 4px">Driver location and ETA</h3>
             <p class="meta" style="margin:0">This gives the restaurant a clear view of where the produce is, reducing uncertainty during delivery.</p>
           </div>
           <span class="eta-pill">ETA: ${eta}</span>
         </div>
         <div class="tracking-grid">
-          <div class="tracking-tile"><span>Current rider</span><strong>${location.rider}</strong></div>
+          <div class="tracking-tile"><span>Current driver</span><strong>${location.driver}</strong></div>
           <div class="tracking-tile"><span>Latest location</span><strong>${location.location}</strong></div>
           <div class="tracking-tile"><span>Current activity</span><strong>${location.activity}</strong></div>
         </div>
         ${route ? renderRouteMap(route,orders,location.activeLegKey) : `
           <div class="info-notice" style="margin-top:12px;margin-bottom:0">
-            The order is not on a shared route yet. Once the farm marks it ready and the route is published, rider location and ETA will appear here.
+            The order is not on a shared route yet. Once the farm marks it ready and the route is published, driver location and ETA will appear here.
           </div>
         `}
       </div>
@@ -2554,7 +2754,7 @@
       "Awaiting farm confirmation":"The farm is reviewing quantity and availability.",
       "Confirmed":"The farm accepted the order.",
       "Ready for pickup":"Produce is packed and ready for collection.",
-      "Waiting for rider acceptance":"The shared route is published and riders are accepting relay tasks.",
+      "Waiting for driver acceptance":"The shared route is published and drivers are accepting delivery legs.",
       "Scheduled for delivery":order.routeId ? `Assigned to relay route ${order.routeId}.` : "A shared route has been scheduled.",
       "In transit":"The segmented relay delivery is moving through farm pickup, hub transfer and final-mile delivery.",
       "Delivered":"Delivery has been completed."
@@ -2804,17 +3004,17 @@
 
 
   // RIDER
-  function refreshRider(){
+  function refreshDriver(){
     renderProfileSelectors();
-    renderRiderTasks();
+    renderDriverTasks();
   }
 
-  function setRiderTab(tab){
-    riderTab = tab;
-    $$(`.tab[data-rider-tab]`).forEach(btn=>btn.classList.toggle("active",btn.dataset.riderTab===tab));
-    $("#riderAvailableTasks")?.classList.toggle("hidden",tab!=="available");
-    $("#riderMyTasks")?.classList.toggle("hidden",tab!=="mine");
-    renderRiderTasks();
+  function setDriverTab(tab){
+    driverTab = tab;
+    $$(`.tab[data-driver-tab]`).forEach(btn=>btn.classList.toggle("active",btn.dataset.driverTab===tab));
+    $("#driverAvailableTasks")?.classList.toggle("hidden",tab!=="available");
+    $("#driverMyTasks")?.classList.toggle("hidden",tab!=="mine");
+    renderDriverTasks();
   }
 
   function routeSegmentsWithRoutes(){
@@ -2824,61 +3024,61 @@
     });
   }
 
-  function renderRiderTasks(){
+  function renderDriverTasks(){
     renderProfileSelectors();
     const allTasks = routeSegmentsWithRoutes();
-    const openTasks = allTasks.filter(task=>task.route.status==="Open for rider acceptance" && !task.route.riderClaims?.[task.key]);
-    const mine = allTasks.filter(task=>task.route.riderClaims?.[task.key]===currentRider().name);
+    const openTasks = allTasks.filter(task=>task.route.status==="Open for driver acceptance" && !task.route.driverClaims?.[task.key]);
+    const mine = allTasks.filter(task=>task.route.driverClaims?.[task.key]===currentDriver().name);
     const inProgress = mine.filter(task=>task.route.status==="In transit" && task.route.legStatus?.[task.key]!=="Completed");
     const completed = mine.filter(task=>task.route.legStatus?.[task.key]==="Completed" || task.route.status==="Delivered");
 
     const setText = (id,value)=>{ const el=$(id); if(el) el.textContent=value; };
-    setText("#riderOpenStat",openTasks.length);
-    setText("#riderMineStat",mine.length);
-    setText("#riderProgressStat",inProgress.length);
-    setText("#riderCompleteStat",completed.length);
+    setText("#driverOpenStat",openTasks.length);
+    setText("#driverMineStat",mine.length);
+    setText("#driverProgressStat",inProgress.length);
+    setText("#driverCompleteStat",completed.length);
 
-    const available = $("#riderAvailableTasks");
+    const available = $("#driverAvailableTasks");
     if(available){
       available.innerHTML = `
         <div class="panel">
           <div class="panel-head">
-            <div><h3>Open relay tasks</h3><p>Riders choose a route leg, search the virtual map, and update their delivery progress</p></div>
+            <div><h3>Open delivery legs</h3><p>Drivers choose a route leg, search the virtual map, and update their delivery progress</p></div>
             <span class="tag">Self-accept model</span>
           </div>
-          <div class="info-notice">The coordinator publishes a shared route, but does not assign riders. Each rider accepts a suitable leg from this task board and can search pickup or destination on the route map. This better reflects platform-based collective participation.</div>
-          <div class="rider-task-grid">
-            ${openTasks.length ? openTasks.map(task=>riderTaskCard(task,"open")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No open tasks now</strong>Create a shared route from ready orders, then open relay tasks will appear here.</div>`}
+          <div class="info-notice">The coordinator publishes a shared route, but does not assign drivers. Each driver accepts a suitable leg from this task board and can search pickup or destination on the route map. This better reflects platform-based collective participation.</div>
+          <div class="driver-task-grid">
+            ${openTasks.length ? openTasks.map(task=>driverTaskCard(task,"open")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No open tasks now</strong>Create a shared route from ready orders, then open delivery legs will appear here.</div>`}
           </div>
         </div>
       `;
     }
 
-    const mineBox = $("#riderMyTasks");
+    const mineBox = $("#driverMyTasks");
     if(mineBox){
       mineBox.innerHTML = `
         <div class="panel">
           <div class="panel-head">
-            <div><h3>My accepted tasks</h3><p>Accepted tasks stay linked to the rider until released before start or completed after start</p></div>
+            <div><h3>My accepted tasks</h3><p>Accepted tasks stay linked to the driver until released before start or completed after start</p></div>
           </div>
-          <div class="rider-task-grid">
-            ${mine.length ? mine.map(task=>riderTaskCard(task,"mine")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No accepted tasks</strong>Accept an open task from the available task board.</div>`}
+          <div class="driver-task-grid">
+            ${mine.length ? mine.map(task=>driverTaskCard(task,"mine")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No accepted tasks</strong>Accept an open task from the available task board.</div>`}
           </div>
         </div>
       `;
     }
   }
 
-  function riderTaskCard(task,mode){
+  function driverTaskCard(task,mode){
     const {route,orders,segment,index,key} = task;
-    const claim = route.riderClaims?.[key];
+    const claim = route.driverClaims?.[key];
     const taskStatus = route.legStatus?.[key] || (claim ? "Accepted" : "Open");
-    const canAccept = !claim && route.status==="Open for rider acceptance";
-    const canRelease = claim===currentRider().name && ["Open for rider acceptance","Ready to start"].includes(route.status);
-    const canComplete = claim===currentRider().name && route.status==="In transit" && taskStatus!=="Completed";
-    const canSearch = route.status!=="Delivered" && (!claim || claim===currentRider().name);
+    const canAccept = !claim && route.status==="Open for driver acceptance";
+    const canRelease = claim===currentDriver().name && ["Open for driver acceptance","Ready to start"].includes(route.status);
+    const canComplete = claim===currentDriver().name && route.status==="In transit" && taskStatus!=="Completed";
+    const canSearch = route.status!=="Delivered" && (!claim || claim===currentDriver().name);
     return `
-      <article class="rider-task-card ${claim?"claimed":""}">
+      <article class="driver-task-card ${claim?"claimed":""}">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:start">
           <div>
             <strong>Route ${route.id} · ${segment.leg}</strong>
@@ -2888,14 +3088,14 @@
         </div>
         <div class="meta"><strong>${segment.role}</strong><br>${segment.from} → ${segment.to}</div>
         ${renderRouteMap(route,orders,key)}
-        <div class="small">Rider: ${claim || "Open to claim"}</div>
+        <div class="small">Driver: ${claim || "Open to claim"}</div>
         <div class="small">Route status: ${route.status}</div>
         <div class="route-actions">
-          ${canSearch ? `<button class="secondary" onclick="searchRiderLocation('${route.id}',${index},'pickup')">Search pickup</button>` : ""}
-          ${canSearch ? `<button class="secondary" onclick="searchRiderLocation('${route.id}',${index},'destination')">Search destination</button>` : ""}
-          ${canAccept ? `<button class="primary" onclick="acceptRiderTask('${route.id}',${index})">Accept task</button>` : ""}
-          ${canRelease ? `<button class="secondary" onclick="releaseRiderTask('${route.id}',${index})">Release</button>` : ""}
-          ${canComplete ? `<button class="primary" onclick="completeRiderTask('${route.id}',${index})">Mark task complete</button>` : ""}
+          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'pickup')">Search pickup</button>` : ""}
+          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'destination')">Search destination</button>` : ""}
+          ${canAccept ? `<button class="primary" onclick="acceptDriverTask('${route.id}',${index})">Accept task</button>` : ""}
+          ${canRelease ? `<button class="secondary" onclick="releaseDriverTask('${route.id}',${index})">Release</button>` : ""}
+          ${canComplete ? `<button class="primary" onclick="completeDriverTask('${route.id}',${index})">Mark task complete</button>` : ""}
           <button class="secondary" onclick="openRouteDetails('${route.id}')">View route</button>
         </div>
       </article>
@@ -2944,7 +3144,7 @@
       "Mid Valley / Seputeh":"Driver insight: Plan around mall loading bays before nearby café and restaurant drops.",
       "Cheras":"Driver insight: Cluster deliveries by main-road access to avoid unnecessary backtracking.",
       "Kepong":"Driver insight: Serve bulk restaurant orders first, then complete smaller neighbourhood stops.",
-      "Setapak / Wangsa Maju":"Driver insight: Use local rider knowledge to avoid campus and residential peak traffic.",
+      "Setapak / Wangsa Maju":"Driver insight: Use local driver knowledge to avoid campus and residential peak traffic.",
       "Titiwangsa / Chow Kit":"Driver insight: Sequence wet-market and restaurant access points before narrow street stops.",
       "Damansara Heights":"Driver insight: Prioritise office-lunch delivery windows and limited parking access.",
       "Ampang":"Driver insight: Treat as a Kuala Lumpur extension route with grouped final-mile drops."
@@ -2959,34 +3159,34 @@
     container.innerHTML = `
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Rider wisdom in shared delivery</h3><p>Dabbawala-inspired relay thinking with rider self-acceptance</p></div>
+          <div><h3>Driver route wisdom in shared delivery</h3><p>Dabbawala-inspired relay thinking with driver self-acceptance</p></div>
           <span class="tag">Human-in-the-loop routing</span>
         </div>
         <div class="info-notice">
-          The platform does not need complex AI routing in the MVP. Instead, it groups orders by area and delivery day, publishes relay delivery legs as open tasks, and lets riders accept the task that matches their availability and local route knowledge.
+          The platform does not need complex AI routing in the MVP. Instead, it groups orders by area and delivery day, publishes relay delivery legs as open tasks, and lets drivers accept the task that matches their availability and local route knowledge.
         </div>
         <div class="wisdom-grid">
           <article class="wisdom-card">
             <div class="wisdom-icon">🧭</div>
             <h3>Driver route knowledge</h3>
-            <p>Riders use local experience about traffic, loading bays and narrow streets when choosing and completing suitable delivery legs.</p>
+            <p>Drivers use local experience about traffic, loading bays and narrow streets when choosing and completing suitable delivery legs.</p>
           </article>
           <article class="wisdom-card">
             <div class="wisdom-icon">🏷️</div>
             <h3>Relay handoffs</h3>
-            <p>Each shared route is split into farm pickup, hub-to-hub transfer and final-mile delivery. Riders self-accept open legs instead of being assigned by the coordinator.</p>
+            <p>Each shared route is split into farm pickup, hub-to-hub transfer and final-mile delivery. Drivers self-accept open legs instead of being assigned by the coordinator.</p>
           </article>
           <article class="wisdom-card">
             <div class="wisdom-icon">🤝</div>
             <h3>Collective entrepreneurship</h3>
-            <p>FarmLink can reward reliable riders and encourage them to share practical route knowledge, improving the system together.</p>
+            <p>FarmLink can reward reliable drivers and encourage them to share practical route knowledge, improving the system together.</p>
           </article>
         </div>
       </div>
 
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Zone-based relay guide</h3><p>Used when publishing routes and helping riders choose suitable tasks</p></div>
+          <div><h3>Zone-based relay guide</h3><p>Used when publishing routes and helping drivers choose suitable tasks</p></div>
         </div>
         <div class="table-wrap">
           <table>
@@ -3000,7 +3200,7 @@
               <tr><td>Mid Valley / Seputeh</td><td><span class="route-code">MVS</span></td><td>${routeWisdomFor("Mid Valley / Seputeh")}</td><td>Plan around mall loading bays before nearby café and restaurant drops.</td></tr>
               <tr><td>Cheras</td><td><span class="route-code">CHS</span></td><td>${routeWisdomFor("Cheras")}</td><td>Cluster deliveries by main-road access to avoid unnecessary backtracking.</td></tr>
               <tr><td>Kepong</td><td><span class="route-code">KPG</span></td><td>${routeWisdomFor("Kepong")}</td><td>Serve bulk restaurant orders first, then complete smaller neighbourhood stops.</td></tr>
-              <tr><td>Setapak / Wangsa Maju</td><td><span class="route-code">SWM</span></td><td>${routeWisdomFor("Setapak / Wangsa Maju")}</td><td>Use local rider knowledge to avoid campus and residential peak traffic.</td></tr>
+              <tr><td>Setapak / Wangsa Maju</td><td><span class="route-code">SWM</span></td><td>${routeWisdomFor("Setapak / Wangsa Maju")}</td><td>Use local driver knowledge to avoid campus and residential peak traffic.</td></tr>
               <tr><td>Titiwangsa / Chow Kit</td><td><span class="route-code">TCK</span></td><td>${routeWisdomFor("Titiwangsa / Chow Kit")}</td><td>Sequence wet-market and restaurant access points before narrow street stops.</td></tr>
               <tr><td>Damansara Heights</td><td><span class="route-code">DH</span></td><td>${routeWisdomFor("Damansara Heights")}</td><td>Prioritise office-lunch delivery windows and limited parking access.</td></tr>
               <tr><td>Ampang</td><td><span class="route-code">AMP</span></td><td>${routeWisdomFor("Ampang")}</td><td>Treat as a Kuala Lumpur extension route with grouped final-mile drops.</td></tr>
@@ -3020,7 +3220,7 @@
     container.innerHTML = `
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Orders ready for shared delivery</h3><p>Select compatible orders, then apply rider route wisdom and zone coding</p></div>
+          <div><h3>Orders ready for shared delivery</h3><p>Select compatible orders, then apply driver route wisdom and zone coding</p></div>
           <button class="primary" onclick="openCreateRoute()">Create route</button>
         </div>
         <div class="table-wrap">
@@ -3056,11 +3256,11 @@
     const preselected = $$(".pool-check:checked").map(input=>input.value);
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, then publish the relay route for riders to self-accept and search on the map</p></div>
+        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, then publish the relay route for drivers to self-accept and search on the map</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
-      <div class="info-notice">For the strongest route match, select orders with the same area and delivery day. The platform then adds a simple zone code and publishes three open rider tasks: farm pickup, hub transfer and final-mile delivery.</div>
+      <div class="info-notice">For the strongest route match, select orders with the same area and delivery day. The platform then adds a simple zone code and publishes three open driver tasks: farm pickup, hub transfer and final-mile delivery.</div>
 
       <div class="table-wrap">
         <table>
@@ -3078,7 +3278,7 @@
 
       <div class="form-grid" style="margin-top:15px">
         <label>Pickup time<input id="routePickupTime" type="time" value="08:30"></label>
-        <label>Rider acceptance model<input value="Riders self-accept open relay tasks" readonly></label>
+        <label>Driver acceptance model<input value="Drivers self-accept open delivery legs" readonly></label>
       </div>
 
       <div class="summary" id="routePreview"></div>
@@ -3119,8 +3319,8 @@
       <div class="summary-row"><span>Compatibility</span><strong>${compatible?"Strong match":"Review selection"}</strong></div>
       <div class="route-insight">
         <div class="insight-card"><strong>Zone code</strong><span class="route-code">${code}-01</span></div>
-        <div class="insight-card"><strong>Rider route wisdom</strong>${routeWisdomFor(area)}</div>
-        <div class="insight-card"><strong>Rider self-claiming</strong>Leg 1, Leg 2 and Leg 3 are published as open tasks for riders to accept.</div>
+        <div class="insight-card"><strong>Driver route wisdom</strong>${routeWisdomFor(area)}</div>
+        <div class="insight-card"><strong>Driver self-claiming</strong>Leg 1, Leg 2 and Leg 3 are published as open tasks for drivers to accept.</div>
       </div>
     `;
   }
@@ -3144,15 +3344,15 @@
       orderIds:orders.map(o=>o.id),
       area:areas[0],
       deliveryDay:days[0],
-      driver:"Rider task board",
+      driver:"Driver task board",
       pickupTime:$("#routePickupTime").value,
       zoneCode:routeZoneCode(areas[0]),
       driverWisdom:routeWisdomFor(areas[0]),
-      riderClaims:{},
+      driverClaims:{},
       legStatus:{},
-      riderSearches:{},
-      status:"Open for rider acceptance",
-      relaySegments:buildRelaySegments({area:areas[0],status:"Open for rider acceptance",riderClaims:{},legStatus:{}},orders),
+      driverSearches:{},
+      status:"Open for driver acceptance",
+      relaySegments:buildRelaySegments({area:areas[0],status:"Open for driver acceptance",driverClaims:{},legStatus:{}},orders),
       createdAt:nowLabel()
     };
 
@@ -3160,11 +3360,11 @@
     orders.forEach((order,index)=>{
       order.routeId = route.id;
       order.routeTag = `${route.zoneCode}-${String(index+1).padStart(2,"0")}`;
-      order.status = "Waiting for rider acceptance";
+      order.status = "Waiting for driver acceptance";
     });
 
     saveState(); closeModal(); refreshAll(); setAdminTab("routes");
-    showToast(`Route ${route.id} published to the rider task board.`);
+    showToast(`Route ${route.id} published to the driver task board.`);
   }
 
   function renderAdminRoutes(){
@@ -3174,7 +3374,7 @@
     const routes = state.routes.slice().reverse();
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes, rider acceptance and map search results</p></div></div>
+        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes, driver acceptance and map search results</p></div></div>
         <div class="route-list">
           ${routes.length ? routes.map(route=>{
             const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
@@ -3187,7 +3387,7 @@
                       <h3 style="margin:0">Route ${route.id}</h3>
                       <span class="status ${route.status==="In transit"?"info":route.status==="Delivered"?"":"warning"}">${route.status}</span>
                     </div>
-                    <div class="meta">${route.area} · ${route.deliveryDay} · Pickup ${route.pickupTime} · Rider self-claiming · Zone code: ${route.zoneCode||routeZoneCode(route.area)}</div>
+                    <div class="meta">${route.area} · ${route.deliveryDay} · Pickup ${route.pickupTime} · Driver self-claiming · Zone code: ${route.zoneCode||routeZoneCode(route.area)}</div>
                   </div>
                   <div class="route-actions">
                     ${route.status==="Ready to start" ? `<button class="primary" onclick="startRoute('${route.id}')">Start delivery</button>` : ""}
@@ -3217,7 +3417,7 @@
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     if(!allRouteLegsClaimed(route)){
-      showToast("All three relay tasks must be accepted by riders before the route can start.");
+      showToast("All three delivery legs must be accepted by drivers before the route can start.");
       return;
     }
     route.status = "In transit";
@@ -3230,14 +3430,14 @@
       if(order) order.status = "In transit";
     });
     saveState(); refreshAll();
-    showToast(`Route ${route.id} is now in transit. Riders can complete their accepted tasks.`);
+    showToast(`Route ${route.id} is now in transit. Drivers can complete their accepted tasks.`);
   }
 
   function completeRoute(routeId){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
     if(!allRouteLegsCompleted(route)){
-      showToast("Complete all accepted rider tasks before closing this route.");
+      showToast("Complete all accepted driver tasks before closing this route.");
       return;
     }
     route.status = "Delivered";
@@ -3257,7 +3457,7 @@
 
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Shared delivery route</span><h2>Route ${route.id}</h2><p class="meta">${route.area} · ${route.deliveryDay} · Rider self-claiming · Code ${route.zoneCode||routeZoneCode(route.area)}</p></div>
+        <div><span class="tag">Shared delivery route</span><h2>Route ${route.id}</h2><p class="meta">${route.area} · ${route.deliveryDay} · Driver self-claiming · Code ${route.zoneCode||routeZoneCode(route.area)}</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
@@ -3275,7 +3475,7 @@
         </table>
       </div>
 
-      <div class="info-notice" style="margin-top:14px"><strong>Rider wisdom layer:</strong> ${route.driverWisdom||routeWisdomFor(route.area)}</div>
+      <div class="info-notice" style="margin-top:14px"><strong>Driver route wisdom layer:</strong> ${route.driverWisdom||routeWisdomFor(route.area)}</div>
 
       <div class="modal-actions">
         <button class="secondary" onclick="closeModal()">Close</button>
