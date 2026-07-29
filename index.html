@@ -336,6 +336,39 @@
       .pricing-rule-grid{grid-template-columns:1fr}
     }
 
+
+    .rider-task-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+      margin-top:12px;
+    }
+    .rider-task-card{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:15px;
+      padding:14px;
+      display:grid;
+      gap:8px;
+      box-shadow:var(--shadow-soft);
+    }
+    .rider-task-card.claimed{background:linear-gradient(135deg,#fff,#f5f8f3)}
+    .claim-badge{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      border-radius:999px;
+      padding:5px 8px;
+      background:var(--surface-2);
+      color:var(--brand);
+      font-weight:850;
+      font-size:12px;
+    }
+    .claim-badge.open{background:var(--warning-bg);color:var(--warning)}
+    .claim-badge.done{background:#eef4ea;color:var(--brand)}
+    .claim-badge.locked{background:var(--info-bg);color:var(--info)}
+    @media(max-width:960px){.rider-task-grid{grid-template-columns:1fr}}
+
     .profile-switch{
       display:flex;
       align-items:center;
@@ -499,11 +532,12 @@
         <div class="hero-card">
           <span class="eyebrow">Group Purchasing + Shared Delivery + Collective Wisdom</span>
           <h1>Fresh produce, smarter group delivery.</h1>
-          <p>FarmLink Direct is planned as a Singapore-based platform using SGD for financial planning, with the first MVP pilot in Kuala Lumpur. It connects farm suppliers with restaurants, hotels and cafés, while delivery coordinators use driver knowledge and zone-based routing for shared delivery.</p>
+          <p>FarmLink Direct is planned as a Singapore-based platform using SGD for financial planning, with the first MVP pilot in Kuala Lumpur. It connects farm suppliers with restaurants, hotels and cafés, while available riders self-accept relay delivery tasks through a shared task board.</p>
           <div class="hero-actions">
             <button class="primary" onclick="selectRole('buyer')">Browse produce</button>
             <button class="secondary" onclick="selectRole('farm')">Manage a farm</button>
-            <button class="secondary" onclick="selectRole('admin')">Coordinate delivery</button>
+            <button class="secondary" onclick="selectRole('admin')">Publish delivery tasks</button>
+            <button class="secondary" onclick="selectRole('rider')">Rider task board</button>
           </div>
         </div>
         <div class="hero-visual">
@@ -511,7 +545,7 @@
             <div class="flow-row"><span><strong>1. Farms list produce</strong><br><small>Price, stock, group target and delivery day</small></span><span class="flow-badge">🚜</span></div>
             <div class="flow-row"><span><strong>2. Businesses order together</strong><br><small>Ordered quantity moves toward the group target</small></span><span class="flow-badge">🤝</span></div>
             <div class="flow-row"><span><strong>3. Farms confirm supply</strong><br><small>Confirmed orders enter the delivery pool</small></span><span class="flow-badge">📦</span></div>
-            <div class="flow-row"><span><strong>4. Drivers add route wisdom</strong><br><small>Zone tags and local knowledge improve shared delivery</small></span><span class="flow-badge">🗺️</span></div>
+            <div class="flow-row"><span><strong>4. Riders add route wisdom</strong><br><small>Zone tags and local knowledge improve shared delivery</small></span><span class="flow-badge">🗺️</span></div>
           </div>
         </div>
       </div>
@@ -533,8 +567,8 @@
         </article>
         <article class="wisdom-card">
           <div class="wisdom-icon">🧠</div>
-          <h3>Collective wisdom</h3>
-          <p>Inspired by relay delivery systems, drivers use local route knowledge and simple zone codes to refine the delivery sequence.</p>
+          <h3>Rider wisdom</h3>
+          <p>Inspired by relay delivery systems, riders use local route knowledge and simple zone codes to refine the delivery sequence.</p>
         </article>
       </div>
 
@@ -554,8 +588,14 @@
         <article class="role-card">
           <div class="role-icon">🗺️</div>
           <h3>Platform Delivery Coordinator</h3>
-          <p>Group compatible orders, assign drivers, use route knowledge, create shared routes and update delivery progress.</p>
+          <p>Group compatible orders, publish relay tasks, monitor rider acceptance and update delivery progress.</p>
           <button class="primary" onclick="selectRole('admin')">Continue as coordinator</button>
+        </article>
+        <article class="role-card">
+          <div class="role-icon">🚴</div>
+          <h3>Rider</h3>
+          <p>View open pickup, hub-transfer and final-mile tasks, then self-accept suitable delivery legs.</p>
+          <button class="primary" onclick="selectRole('rider')">Continue as rider</button>
         </article>
       </div>
     </section>
@@ -652,24 +692,55 @@
       <div id="farmOrders" class="hidden"></div>
     </section>
 
-    <section id="adminView" class="hidden">
+
+
+    <section id="riderView" class="hidden">
       <div class="dashboard-head">
         <div>
-          <h2>Kuala Lumpur Delivery Coordination Dashboard</h2>
-          <p>Coordinate confirmed KL orders, shared routes and driver route knowledge</p>
+          <h2>Rider Task Board</h2>
+          <p id="riderContext">Aina Rider · Self-claim delivery tasks</p>
         </div>
-        <button class="primary" onclick="openCreateRoute()">Create shared route</button>
+        <div class="profile-switch">
+          <label for="riderProfileSelect">View as rider</label>
+          <select id="riderProfileSelect" onchange="switchRiderProfile(this.value)"></select>
+          <button class="primary" onclick="setRiderTab('available')">Find open tasks</button>
+        </div>
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-admin-tab="pool" onclick="setAdminTab('pool')">KL delivery pool</button>
-        <button class="tab" data-admin-tab="wisdom" onclick="setAdminTab('wisdom')">Collective wisdom</button>
-        <button class="tab" data-admin-tab="routes" onclick="setAdminTab('routes')">Active routes</button>
+        <button class="tab active" data-rider-tab="available" onclick="setRiderTab('available')">Available tasks</button>
+        <button class="tab" data-rider-tab="mine" onclick="setRiderTab('mine')">My accepted tasks</button>
       </div>
 
       <div class="stats">
-        <div class="stat"><span>Orders in delivery pool</span><strong id="adminPoolStat">0</strong></div>
-        <div class="stat"><span>Active routes</span><strong id="adminRouteStat">0</strong></div>
+        <div class="stat"><span>Open relay tasks</span><strong id="riderOpenStat">0</strong></div>
+        <div class="stat"><span>My accepted tasks</span><strong id="riderMineStat">0</strong></div>
+        <div class="stat"><span>Tasks in progress</span><strong id="riderProgressStat">0</strong></div>
+        <div class="stat"><span>My completed tasks</span><strong id="riderCompleteStat">0</strong></div>
+      </div>
+
+      <div id="riderAvailableTasks"></div>
+      <div id="riderMyTasks" class="hidden"></div>
+    </section>
+
+    <section id="adminView" class="hidden">
+      <div class="dashboard-head">
+        <div>
+          <h2>Kuala Lumpur Delivery Task Dashboard</h2>
+          <p>Publish confirmed KL orders as open rider tasks and monitor acceptance</p>
+        </div>
+        <button class="primary" onclick="openCreateRoute()">Publish shared route</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-admin-tab="pool" onclick="setAdminTab('pool')">Ready order pool</button>
+        <button class="tab" data-admin-tab="wisdom" onclick="setAdminTab('wisdom')">Rider wisdom</button>
+        <button class="tab" data-admin-tab="routes" onclick="setAdminTab('routes')">Published routes</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><span>Orders ready to publish</span><strong id="adminPoolStat">0</strong></div>
+        <div class="stat"><span>Published routes</span><strong id="adminRouteStat">0</strong></div>
         <div class="stat"><span>Delivery fees collected</span><strong id="adminRevenueStat">SGD 0</strong></div>
         <div class="stat"><span>Completed deliveries</span><strong id="adminDeliveredStat">0</strong></div>
       </div>
@@ -717,16 +788,11 @@
     {id:"riverbank",name:"Riverbank Produce",origin:"Semenyih, Selangor"}
   ];
 
-
-  const relayStaff = [
-    "Nur Aina",
-    "Daniel Lim",
-    "Priya Nair",
-    "Alex Tan",
-    "Marcus Lim",
-    "Farah Aziz",
-    "Wei Jian",
-    "Arif Rahman"
+  const riderProfiles = [
+    {id:"rider-aina",name:"Aina Rider",area:"Bukit Bintang",vehicle:"Motorbike",strength:"Farm pickup and café deliveries"},
+    {id:"rider-daniel",name:"Daniel Relay",area:"KLCC",vehicle:"Van",strength:"Hub-to-hub produce transfer"},
+    {id:"rider-priya",name:"Priya Express",area:"Bangsar",vehicle:"Motorbike",strength:"Final-mile hospitality drops"},
+    {id:"rider-arif",name:"Arif Logistics",area:"Mid Valley / Seputeh",vehicle:"Van",strength:"Bulk restaurant deliveries"}
   ];
 
   const seedState = {
@@ -743,6 +809,7 @@
   let buyerTab = "market";
   let farmTab = "listings";
   let adminTab = "pool";
+  let riderTab = "available";
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -751,7 +818,7 @@
 
   function loadState(){
     try{
-      const saved = localStorage.getItem("farmlink_direct_kl_demo_v8_farm_direct_prices_state");
+      const saved = localStorage.getItem("farmlink_direct_kl_demo_v9_rider_self_claim_state");
       return saved ? JSON.parse(saved) : clone(seedState);
     }catch(error){
       return clone(seedState);
@@ -759,7 +826,7 @@
   }
 
   function saveState(){
-    localStorage.setItem("farmlink_direct_kl_demo_v8_farm_direct_prices_state", JSON.stringify(state));
+    localStorage.setItem("farmlink_direct_kl_demo_v9_rider_self_claim_state", JSON.stringify(state));
   }
 
   ensureStateDefaults();
@@ -836,6 +903,9 @@
     if(!state.farmProfile || !state.farmProfile.id){
       state.farmProfile = clone(farmProfiles[0]);
     }
+    if(!state.riderProfile || !state.riderProfile.id){
+      state.riderProfile = clone(riderProfiles[0]);
+    }
     state.cart.forEach(item=>{
       if(!item.buyer) item.buyer = state.buyerProfile.name;
       if(!item.distanceKm){
@@ -844,10 +914,11 @@
       }
     });
     state.routes.forEach(route=>{
-      if(!route.relaySegments){
-        const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
-        route.relaySegments = buildRelaySegments(route,orders);
-      }
+      if(!route.riderClaims) route.riderClaims = {};
+      if(!route.legStatus) route.legStatus = {};
+      if(route.status==="Scheduled") route.status = Object.keys(route.riderClaims).length ? "Ready to start" : "Open for rider acceptance";
+      const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+      route.relaySegments = buildRelaySegments(route,orders);
     });
   }
 
@@ -860,10 +931,16 @@
     if(farmSelect){
       farmSelect.innerHTML = farmProfiles.map(profile=>`<option value="${profile.id}" ${profile.id===state.farmProfile.id?"selected":""}>${profile.name} · ${profile.origin}</option>`).join("");
     }
+    const riderSelect = $("#riderProfileSelect");
+    if(riderSelect){
+      riderSelect.innerHTML = riderProfiles.map(profile=>`<option value="${profile.id}" ${profile.id===state.riderProfile.id?"selected":""}>${profile.name} · ${profile.area} · ${profile.vehicle}</option>`).join("");
+    }
     const buyerContext = $("#buyerContext");
     if(buyerContext) buyerContext.textContent = `${state.buyerProfile.name} · ${state.buyerProfile.area} · Observer view`;
     const farmContext = $("#farmContext");
     if(farmContext) farmContext.textContent = `${state.farmProfile.name} · ${state.farmProfile.origin} · Observer view`;
+    const riderContext = $("#riderContext");
+    if(riderContext) riderContext.textContent = `${state.riderProfile.name} · ${state.riderProfile.area} · ${state.riderProfile.vehicle} · Self-claim view`;
   }
 
   function switchBuyerProfile(profileId){
@@ -882,6 +959,15 @@
     saveState();
     refreshAll();
     showToast(`Farm view switched to ${profile.name}.`);
+  }
+
+  function switchRiderProfile(profileId){
+    const profile = riderProfiles.find(p=>p.id===profileId);
+    if(!profile) return;
+    state.riderProfile = clone(profile);
+    saveState();
+    refreshAll();
+    showToast(`Rider view switched to ${profile.name}.`);
   }
 
   function zoneDistanceKm(area){
@@ -953,41 +1039,104 @@
   }
 
 
-  function staffOptions(selected){
-    return relayStaff.map(name=>`<option ${name===selected?"selected":""}>${name}</option>`).join("");
+  function currentRider(){
+    return state.riderProfile || riderProfiles[0];
   }
 
-  function selectedRelayStaff(){
-    return {
-      leg1:$("#leg1Staff")?.value || "Nur Aina",
-      leg2:$("#leg2Staff")?.value || "Daniel Lim",
-      leg3:$("#leg3Staff")?.value || "Priya Nair"
-    };
+  function legKey(index){
+    return `leg${index+1}`;
   }
 
-  function assignRelayStaff(routeId,segmentIndex,staffName){
+  function allRouteLegsClaimed(route){
+    const claims = route.riderClaims || {};
+    return ["leg1","leg2","leg3"].every(key=>Boolean(claims[key]));
+  }
+
+  function allRouteLegsCompleted(route){
+    const status = route.legStatus || {};
+    return ["leg1","leg2","leg3"].every(key=>status[key]==="Completed");
+  }
+
+  function updateRouteAcceptanceStatus(route){
+    if(route.status==="Delivered" || route.status==="In transit") return;
+    route.status = allRouteLegsClaimed(route) ? "Ready to start" : "Open for rider acceptance";
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    orders.forEach(order=>{
+      order.status = route.status==="Ready to start" ? "Scheduled for delivery" : "Waiting for rider acceptance";
+    });
+  }
+
+  function acceptRiderTask(routeId,segmentIndex){
     const route = state.routes.find(r=>r.id===routeId);
     if(!route) return;
-    if(route.status==="Delivered"){
-      showToast("This route has been completed. Staff assignments are now locked.");
-      renderAdminRoutes();
+    if(["In transit","Delivered"].includes(route.status)){
+      showToast("This route has already started, so new rider claims are closed.");
       return;
     }
-    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
-    if(!route.relayStaff){
-      route.relayStaff = {
-        leg1:route.relaySegments?.[0]?.staff || "Nur Aina",
-        leg2:route.relaySegments?.[1]?.staff || "Daniel Lim",
-        leg3:route.relaySegments?.[2]?.staff || "Priya Nair"
-      };
+    const key = legKey(segmentIndex);
+    route.riderClaims = route.riderClaims || {};
+    route.legStatus = route.legStatus || {};
+    if(route.riderClaims[key]){
+      showToast("This task has already been accepted by another rider.");
+      return;
     }
-    route.relayStaff[`leg${segmentIndex+1}`] = staffName;
+    route.riderClaims[key] = currentRider().name;
+    route.legStatus[key] = "Accepted";
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
+    updateRouteAcceptanceStatus(route);
     saveState();
-    renderAdminRoutes();
-    showToast(`Assigned ${staffName} to ${route.relaySegments[segmentIndex].leg}.`);
+    refreshAll();
+    showToast(`${currentRider().name} accepted ${route.relaySegments[segmentIndex].leg} on Route ${route.id}.`);
   }
 
+  function releaseRiderTask(routeId,segmentIndex){
+    const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    const key = legKey(segmentIndex);
+    if(route.status==="Delivered" || route.status==="In transit"){
+      showToast("This route is already active or completed, so accepted tasks cannot be released.");
+      return;
+    }
+    if(route.riderClaims?.[key] !== currentRider().name){
+      showToast("Only the rider who accepted this task can release it before the route starts.");
+      return;
+    }
+    delete route.riderClaims[key];
+    delete route.legStatus[key];
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    route.relaySegments = buildRelaySegments(route,orders);
+    updateRouteAcceptanceStatus(route);
+    saveState();
+    refreshAll();
+    showToast(`${currentRider().name} released the task.`);
+  }
+
+  function completeRiderTask(routeId,segmentIndex){
+    const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    const key = legKey(segmentIndex);
+    if(route.riderClaims?.[key] !== currentRider().name){
+      showToast("Only the rider who accepted this task can complete it.");
+      return;
+    }
+    if(route.status!=="In transit"){
+      showToast("The route must be started before rider tasks can be completed.");
+      return;
+    }
+    route.legStatus[key] = "Completed";
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    route.relaySegments = buildRelaySegments(route,orders);
+    if(allRouteLegsCompleted(route)){
+      route.status = "Delivered";
+      orders.forEach(order=>order.status="Delivered");
+      showToast(`All rider tasks completed. Route ${route.id} is delivered.`);
+    }else{
+      showToast(`${currentRider().name} completed ${route.relaySegments[segmentIndex].leg}.`);
+    }
+    saveState();
+    refreshAll();
+  }
 
   function hubForArea(area){
     const hubs = {
@@ -1021,27 +1170,25 @@
     const farmHub = pickupHubForFarm(primaryFarm);
     const zoneHub = hubForArea(route.area);
     const buyerNames = orders.map(o=>o.buyer).join(", ");
-    const staff = route.relayStaff || {leg1:"Nur Aina",leg2:"Daniel Lim",leg3:"Priya Nair"};
+    const claims = route.riderClaims || {};
+    const legStatus = route.legStatus || {};
+    const statusFor = key => route.status==="Delivered" ? "Completed" : (legStatus[key] || (claims[key] ? "Accepted" : "Open"));
     return [
-      {leg:"Leg 1",from:primaryFarm,to:farmHub,staff:staff.leg1,role:"Farm pickup",status:route.status==="Delivered"?"Completed":route.status==="In transit"?"Completed":"Scheduled"},
-      {leg:"Leg 2",from:farmHub,to:zoneHub,staff:staff.leg2,role:"Hub-to-hub relay",status:route.status==="Delivered"?"Completed":route.status==="In transit"?"In transit":"Scheduled"},
-      {leg:"Leg 3",from:zoneHub,to:buyerNames,staff:staff.leg3,role:"Final-mile delivery",status:route.status==="Delivered"?"Completed":route.status==="In transit"?"In transit":"Scheduled"}
+      {key:"leg1",leg:"Leg 1",from:primaryFarm,to:farmHub,rider:claims.leg1 || "Open to claim",role:"Farm pickup",status:statusFor("leg1")},
+      {key:"leg2",leg:"Leg 2",from:farmHub,to:zoneHub,rider:claims.leg2 || "Open to claim",role:"Hub-to-hub relay",status:statusFor("leg2")},
+      {key:"leg3",leg:"Leg 3",from:zoneHub,to:buyerNames,rider:claims.leg3 || "Open to claim",role:"Final-mile delivery",status:statusFor("leg3")}
     ];
   }
 
   function renderRelaySegments(route,orders){
-    const segments = route.relaySegments || buildRelaySegments(route,orders);
-    return `<div class="relay-grid">${segments.map((segment,index)=>`
+    const segments = buildRelaySegments(route,orders);
+    route.relaySegments = segments;
+    return `<div class="relay-grid">${segments.map(segment=>`
       <div class="relay-segment">
         <strong>${segment.leg}: ${segment.role}</strong>
         <div>${segment.from} → ${segment.to}</div>
-        <span class="small">Status: ${segment.status}</span>
-        ${route.id ? `<label class="small">${route.status==="Delivered"?"Staff assignment locked":"Assign staff"}
-          <select class="staff-select" ${route.status==="Delivered"?"disabled":""} onchange="assignRelayStaff('${route.id}',${index},this.value)">
-            ${staffOptions(segment.staff)}
-          </select>
-        </label>
-        ${route.status==="Delivered"?`<span class="small">Completed route: staff can no longer be changed.</span>`:""}` : `<span class="small">Assigned staff: ${segment.staff}</span>`}
+        <span class="small">Rider: ${segment.rider}</span>
+        <span class="small">Task status: ${segment.status}</span>
       </div>
     `).join("")}</div>`;
   }
@@ -1068,7 +1215,7 @@
     return `${prefix}-${Math.floor(1000 + Math.random()*9000)}`;
   }
   function statusClass(status){
-    if(["Awaiting farm confirmation","Scheduled for delivery"].includes(status)) return "warning";
+    if(["Awaiting farm confirmation","Scheduled for delivery","Waiting for rider acceptance","Open for rider acceptance","Ready to start"].includes(status)) return "warning";
     if(["In transit"].includes(status)) return "info";
     if(["Cancelled","Rejected"].includes(status)) return "danger";
     return "";
@@ -1130,12 +1277,13 @@
   function selectRole(role){
     activeRole = role;
     $("#landing").classList.add("hidden");
-    ["buyerView","farmView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
+    ["buyerView","farmView","riderView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
     $("#switchRoleBtn").classList.remove("hidden");
 
     const map = {
       buyer:["buyerView","KL buyer account"],
       farm:["farmView","KL farm supplier account"],
+      rider:["riderView","Rider self-claim account"],
       admin:["adminView","Admin account"]
     };
     $("#"+map[role][0]).classList.remove("hidden");
@@ -1143,13 +1291,14 @@
 
     if(role==="buyer"){ setBuyerTab(buyerTab); refreshBuyer(); }
     if(role==="farm"){ setFarmTab(farmTab); refreshFarm(); }
+    if(role==="rider"){ setRiderTab(riderTab); refreshRider(); }
     if(role==="admin"){ setAdminTab(adminTab); refreshAdmin(); }
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
   $("#switchRoleBtn").onclick = () => {
     activeRole = null;
-    ["buyerView","farmView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
+    ["buyerView","farmView","riderView","adminView"].forEach(id=>$("#"+id).classList.add("hidden"));
     $("#landing").classList.remove("hidden");
     $("#switchRoleBtn").classList.add("hidden");
     $("#rolePill").textContent = "Welcome";
@@ -1180,6 +1329,7 @@
   function refreshAll(){
     refreshBuyer();
     refreshFarm();
+    refreshRider();
     refreshAdmin();
   }
 
@@ -1979,6 +2129,102 @@
     showToast(`Order ${order.id} is ready for pickup.`);
   }
 
+
+
+  // RIDER
+  function refreshRider(){
+    renderProfileSelectors();
+    renderRiderTasks();
+  }
+
+  function setRiderTab(tab){
+    riderTab = tab;
+    $$(`.tab[data-rider-tab]`).forEach(btn=>btn.classList.toggle("active",btn.dataset.riderTab===tab));
+    $("#riderAvailableTasks")?.classList.toggle("hidden",tab!=="available");
+    $("#riderMyTasks")?.classList.toggle("hidden",tab!=="mine");
+    renderRiderTasks();
+  }
+
+  function routeSegmentsWithRoutes(){
+    return state.routes.flatMap(route=>{
+      const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+      return buildRelaySegments(route,orders).map((segment,index)=>({route,orders,segment,index,key:legKey(index)}));
+    });
+  }
+
+  function renderRiderTasks(){
+    renderProfileSelectors();
+    const allTasks = routeSegmentsWithRoutes();
+    const openTasks = allTasks.filter(task=>task.route.status==="Open for rider acceptance" && !task.route.riderClaims?.[task.key]);
+    const mine = allTasks.filter(task=>task.route.riderClaims?.[task.key]===currentRider().name);
+    const inProgress = mine.filter(task=>task.route.status==="In transit" && task.route.legStatus?.[task.key]!=="Completed");
+    const completed = mine.filter(task=>task.route.legStatus?.[task.key]==="Completed" || task.route.status==="Delivered");
+
+    const setText = (id,value)=>{ const el=$(id); if(el) el.textContent=value; };
+    setText("#riderOpenStat",openTasks.length);
+    setText("#riderMineStat",mine.length);
+    setText("#riderProgressStat",inProgress.length);
+    setText("#riderCompleteStat",completed.length);
+
+    const available = $("#riderAvailableTasks");
+    if(available){
+      available.innerHTML = `
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Open relay tasks</h3><p>Riders choose the route leg that matches their area, vehicle and availability</p></div>
+            <span class="tag">Self-accept model</span>
+          </div>
+          <div class="info-notice">The coordinator publishes a shared route, but does not assign riders. Each rider accepts a suitable leg from this task board. This better reflects platform-based collective participation.</div>
+          <div class="rider-task-grid">
+            ${openTasks.length ? openTasks.map(task=>riderTaskCard(task,"open")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No open tasks now</strong>Create a shared route from ready orders, then open relay tasks will appear here.</div>`}
+          </div>
+        </div>
+      `;
+    }
+
+    const mineBox = $("#riderMyTasks");
+    if(mineBox){
+      mineBox.innerHTML = `
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>My accepted tasks</h3><p>Accepted tasks stay linked to the rider until released before start or completed after start</p></div>
+          </div>
+          <div class="rider-task-grid">
+            ${mine.length ? mine.map(task=>riderTaskCard(task,"mine")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No accepted tasks</strong>Accept an open task from the available task board.</div>`}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function riderTaskCard(task,mode){
+    const {route,segment,index,key} = task;
+    const claim = route.riderClaims?.[key];
+    const taskStatus = route.legStatus?.[key] || (claim ? "Accepted" : "Open");
+    const canAccept = !claim && route.status==="Open for rider acceptance";
+    const canRelease = claim===currentRider().name && ["Open for rider acceptance","Ready to start"].includes(route.status);
+    const canComplete = claim===currentRider().name && route.status==="In transit" && taskStatus!=="Completed";
+    return `
+      <article class="rider-task-card ${claim?"claimed":""}">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:start">
+          <div>
+            <strong>Route ${route.id} · ${segment.leg}</strong>
+            <div class="meta">${route.area} · ${route.deliveryDay} · Pickup ${route.pickupTime}</div>
+          </div>
+          <span class="claim-badge ${taskStatus==="Open"?"open":taskStatus==="Completed"?"done":"locked"}">${taskStatus}</span>
+        </div>
+        <div class="meta"><strong>${segment.role}</strong><br>${segment.from} → ${segment.to}</div>
+        <div class="small">Rider: ${claim || "Open to claim"}</div>
+        <div class="small">Route status: ${route.status}</div>
+        <div class="route-actions">
+          ${canAccept ? `<button class="primary" onclick="acceptRiderTask('${route.id}',${index})">Accept task</button>` : ""}
+          ${canRelease ? `<button class="secondary" onclick="releaseRiderTask('${route.id}',${index})">Release</button>` : ""}
+          ${canComplete ? `<button class="primary" onclick="completeRiderTask('${route.id}',${index})">Mark task complete</button>` : ""}
+          <button class="secondary" onclick="openRouteDetails('${route.id}')">View route</button>
+        </div>
+      </article>
+    `;
+  }
   // ADMIN
   function setAdminTab(tab){
     adminTab = tab;
@@ -2022,7 +2268,7 @@
       "Mid Valley / Seputeh":"Driver insight: Plan around mall loading bays before nearby café and restaurant drops.",
       "Cheras":"Driver insight: Cluster deliveries by main-road access to avoid unnecessary backtracking.",
       "Kepong":"Driver insight: Serve bulk restaurant orders first, then complete smaller neighbourhood stops.",
-      "Setapak / Wangsa Maju":"Driver insight: Use local driver knowledge to avoid campus and residential peak traffic.",
+      "Setapak / Wangsa Maju":"Driver insight: Use local rider knowledge to avoid campus and residential peak traffic.",
       "Titiwangsa / Chow Kit":"Driver insight: Sequence wet-market and restaurant access points before narrow street stops.",
       "Damansara Heights":"Driver insight: Prioritise office-lunch delivery windows and limited parking access.",
       "Ampang":"Driver insight: Treat as a Kuala Lumpur extension route with grouped final-mile drops."
@@ -2037,34 +2283,34 @@
     container.innerHTML = `
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Collective wisdom in shared delivery</h3><p>Dabbawala-inspired relay thinking adapted for a simple MVP</p></div>
+          <div><h3>Rider wisdom in shared delivery</h3><p>Dabbawala-inspired relay thinking with rider self-acceptance</p></div>
           <span class="tag">Human-in-the-loop routing</span>
         </div>
         <div class="info-notice">
-          The platform does not need complex AI routing in the MVP. Instead, it captures practical staff knowledge, groups orders by area and delivery day, and uses a segmented relay model: one employee handles farm pickup, another handles inter-hub transfer, and a final-mile staff member completes delivery to restaurants.
+          The platform does not need complex AI routing in the MVP. Instead, it groups orders by area and delivery day, publishes relay delivery legs as open tasks, and lets riders accept the task that matches their availability and local route knowledge.
         </div>
         <div class="wisdom-grid">
           <article class="wisdom-card">
             <div class="wisdom-icon">🧭</div>
             <h3>Driver route knowledge</h3>
-            <p>Drivers can use local experience about traffic, loading bays and narrow streets to suggest a better delivery sequence.</p>
+            <p>Riders use local experience about traffic, loading bays and narrow streets when choosing and completing suitable delivery legs.</p>
           </article>
           <article class="wisdom-card">
             <div class="wisdom-icon">🏷️</div>
             <h3>Relay handoffs</h3>
-            <p>Each shared route is split into farm pickup, hub-to-hub transfer and final-mile delivery, with different staff responsible for each leg.</p>
+            <p>Each shared route is split into farm pickup, hub-to-hub transfer and final-mile delivery. Riders self-accept open legs instead of being assigned by the coordinator.</p>
           </article>
           <article class="wisdom-card">
             <div class="wisdom-icon">🤝</div>
             <h3>Collective entrepreneurship</h3>
-            <p>FarmLink can reward delivery teams for reliable shared routes, encouraging staff to improve the system together.</p>
+            <p>FarmLink can reward reliable riders and encourage them to share practical route knowledge, improving the system together.</p>
           </article>
         </div>
       </div>
 
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Zone-based relay guide</h3><p>Used by coordinators when creating shared delivery routes</p></div>
+          <div><h3>Zone-based relay guide</h3><p>Used when publishing routes and helping riders choose suitable tasks</p></div>
         </div>
         <div class="table-wrap">
           <table>
@@ -2078,7 +2324,7 @@
               <tr><td>Mid Valley / Seputeh</td><td><span class="route-code">MVS</span></td><td>${routeWisdomFor("Mid Valley / Seputeh")}</td><td>Plan around mall loading bays before nearby café and restaurant drops.</td></tr>
               <tr><td>Cheras</td><td><span class="route-code">CHS</span></td><td>${routeWisdomFor("Cheras")}</td><td>Cluster deliveries by main-road access to avoid unnecessary backtracking.</td></tr>
               <tr><td>Kepong</td><td><span class="route-code">KPG</span></td><td>${routeWisdomFor("Kepong")}</td><td>Serve bulk restaurant orders first, then complete smaller neighbourhood stops.</td></tr>
-              <tr><td>Setapak / Wangsa Maju</td><td><span class="route-code">SWM</span></td><td>${routeWisdomFor("Setapak / Wangsa Maju")}</td><td>Use local driver knowledge to avoid campus and residential peak traffic.</td></tr>
+              <tr><td>Setapak / Wangsa Maju</td><td><span class="route-code">SWM</span></td><td>${routeWisdomFor("Setapak / Wangsa Maju")}</td><td>Use local rider knowledge to avoid campus and residential peak traffic.</td></tr>
               <tr><td>Titiwangsa / Chow Kit</td><td><span class="route-code">TCK</span></td><td>${routeWisdomFor("Titiwangsa / Chow Kit")}</td><td>Sequence wet-market and restaurant access points before narrow street stops.</td></tr>
               <tr><td>Damansara Heights</td><td><span class="route-code">DH</span></td><td>${routeWisdomFor("Damansara Heights")}</td><td>Prioritise office-lunch delivery windows and limited parking access.</td></tr>
               <tr><td>Ampang</td><td><span class="route-code">AMP</span></td><td>${routeWisdomFor("Ampang")}</td><td>Treat as a Kuala Lumpur extension route with grouped final-mile drops.</td></tr>
@@ -2098,7 +2344,7 @@
     container.innerHTML = `
       <div class="panel">
         <div class="panel-head">
-          <div><h3>Orders ready for shared delivery</h3><p>Select compatible orders, then apply driver route wisdom and zone coding</p></div>
+          <div><h3>Orders ready for shared delivery</h3><p>Select compatible orders, then apply rider route wisdom and zone coding</p></div>
           <button class="primary" onclick="openCreateRoute()">Create route</button>
         </div>
         <div class="table-wrap">
@@ -2134,11 +2380,11 @@
     const preselected = $$(".pool-check:checked").map(input=>input.value);
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, assign staff for each relay leg and preview the route wisdom layer</p></div>
+        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, then publish the relay route for riders to self-accept</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
-      <div class="info-notice">For the strongest route match, select orders with the same area and delivery day. The platform then adds a simple zone code, relay-staff assignment and a driver-based route suggestion.</div>
+      <div class="info-notice">For the strongest route match, select orders with the same area and delivery day. The platform then adds a simple zone code and publishes three open rider tasks: farm pickup, hub transfer and final-mile delivery.</div>
 
       <div class="table-wrap">
         <table>
@@ -2155,23 +2401,15 @@
       </div>
 
       <div class="form-grid" style="margin-top:15px">
-        <label>Leg 1 farm pickup staff
-          <select id="leg1Staff" onchange="updateRoutePreview()">${staffOptions("Nur Aina")}</select>
-        </label>
-        <label>Leg 2 hub-to-hub relay staff
-          <select id="leg2Staff" onchange="updateRoutePreview()">${staffOptions("Daniel Lim")}</select>
-        </label>
-        <label>Leg 3 final-mile staff
-          <select id="leg3Staff" onchange="updateRoutePreview()">${staffOptions("Priya Nair")}</select>
-        </label>
         <label>Pickup time<input id="routePickupTime" type="time" value="08:30"></label>
+        <label>Rider acceptance model<input value="Riders self-accept open relay tasks" readonly></label>
       </div>
 
       <div class="summary" id="routePreview"></div>
 
       <div class="modal-actions">
         <button class="secondary" onclick="closeModal()">Cancel</button>
-        <button class="primary" onclick="createSharedRoute()">Create route</button>
+        <button class="primary" onclick="createSharedRoute()">Publish route tasks</button>
       </div>
     `,true);
 
@@ -2196,7 +2434,6 @@
     const area = areas[0] || "General";
     const distance = Math.round(8 + orders.length*2.5);
     const code = routeZoneCode(area);
-    const staff = selectedRelayStaff();
 
     $("#routePreview").innerHTML = `
       <div class="summary-row"><span>Selected orders</span><strong>${orders.length}</strong></div>
@@ -2206,8 +2443,8 @@
       <div class="summary-row"><span>Compatibility</span><strong>${compatible?"Strong match":"Review selection"}</strong></div>
       <div class="route-insight">
         <div class="insight-card"><strong>Zone code</strong><span class="route-code">${code}-01</span></div>
-        <div class="insight-card"><strong>Driver route wisdom</strong>${routeWisdomFor(area)}</div>
-        <div class="insight-card"><strong>Relay delivery</strong>Leg 1 ${staff.leg1} → Leg 2 ${staff.leg2} → Leg 3 ${staff.leg3}.</div>
+        <div class="insight-card"><strong>Rider route wisdom</strong>${routeWisdomFor(area)}</div>
+        <div class="insight-card"><strong>Rider self-claiming</strong>Leg 1, Leg 2 and Leg 3 are published as open tasks for riders to accept.</div>
       </div>
     `;
   }
@@ -2231,13 +2468,14 @@
       orderIds:orders.map(o=>o.id),
       area:areas[0],
       deliveryDay:days[0],
-      driver:"Relay team",
+      driver:"Rider task board",
       pickupTime:$("#routePickupTime").value,
       zoneCode:routeZoneCode(areas[0]),
       driverWisdom:routeWisdomFor(areas[0]),
-      relayStaff:selectedRelayStaff(),
-      status:"Scheduled",
-      relaySegments:buildRelaySegments({area:areas[0],status:"Scheduled",relayStaff:selectedRelayStaff()},orders),
+      riderClaims:{},
+      legStatus:{},
+      status:"Open for rider acceptance",
+      relaySegments:buildRelaySegments({area:areas[0],status:"Open for rider acceptance",riderClaims:{},legStatus:{}},orders),
       createdAt:nowLabel()
     };
 
@@ -2245,11 +2483,11 @@
     orders.forEach((order,index)=>{
       order.routeId = route.id;
       order.routeTag = `${route.zoneCode}-${String(index+1).padStart(2,"0")}`;
-      order.status = "Scheduled for delivery";
+      order.status = "Waiting for rider acceptance";
     });
 
     saveState(); closeModal(); refreshAll(); setAdminTab("routes");
-    showToast(`Route ${route.id} created.`);
+    showToast(`Route ${route.id} published to the rider task board.`);
   }
 
   function renderAdminRoutes(){
@@ -2259,7 +2497,7 @@
     const routes = state.routes.slice().reverse();
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>Delivery routes</h3><p>Start, monitor and complete shared deliveries</p></div></div>
+        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes and rider acceptance</p></div></div>
         <div class="route-list">
           ${routes.length ? routes.map(route=>{
             const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
@@ -2272,11 +2510,11 @@
                       <h3 style="margin:0">Route ${route.id}</h3>
                       <span class="status ${route.status==="In transit"?"info":route.status==="Delivered"?"":"warning"}">${route.status}</span>
                     </div>
-                    <div class="meta">${route.area} · ${route.deliveryDay} · Pickup ${route.pickupTime} · Relay team · Zone code: ${route.zoneCode||routeZoneCode(route.area)}</div>
+                    <div class="meta">${route.area} · ${route.deliveryDay} · Pickup ${route.pickupTime} · Rider self-claiming · Zone code: ${route.zoneCode||routeZoneCode(route.area)}</div>
                   </div>
                   <div class="route-actions">
-                    ${route.status==="Scheduled" ? `<button class="primary" onclick="startRoute('${route.id}')">Start delivery</button>` : ""}
-                    ${route.status==="In transit" ? `<button class="primary" onclick="completeRoute('${route.id}')">Complete route</button>` : ""}
+                    ${route.status==="Ready to start" ? `<button class="primary" onclick="startRoute('${route.id}')">Start delivery</button>` : ""}
+                    ${route.status==="In transit" && allRouteLegsCompleted(route) ? `<button class="primary" onclick="completeRoute('${route.id}')">Complete route</button>` : ""}
                     <button class="secondary" onclick="openRouteDetails('${route.id}')">View details</button>
                   </div>
                 </div>
@@ -2299,18 +2537,31 @@
 
   function startRoute(routeId){
     const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    if(!allRouteLegsClaimed(route)){
+      showToast("All three relay tasks must be accepted by riders before the route can start.");
+      return;
+    }
     route.status = "In transit";
+    ["leg1","leg2","leg3"].forEach(key=>{
+      if(route.legStatus[key]!=="Completed") route.legStatus[key] = "In progress";
+    });
     route.relaySegments = buildRelaySegments(route,route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean));
     route.orderIds.forEach(id=>{
       const order = state.orders.find(o=>o.id===id);
       if(order) order.status = "In transit";
     });
     saveState(); refreshAll();
-    showToast(`Route ${route.id} is now in transit.`);
+    showToast(`Route ${route.id} is now in transit. Riders can complete their accepted tasks.`);
   }
 
   function completeRoute(routeId){
     const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    if(!allRouteLegsCompleted(route)){
+      showToast("Complete all accepted rider tasks before closing this route.");
+      return;
+    }
     route.status = "Delivered";
     route.relaySegments = buildRelaySegments(route,route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean));
     route.orderIds.forEach(id=>{
@@ -2328,7 +2579,7 @@
 
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Shared delivery route</span><h2>Route ${route.id}</h2><p class="meta">${route.area} · ${route.deliveryDay} · Relay team · Code ${route.zoneCode||routeZoneCode(route.area)}</p></div>
+        <div><span class="tag">Shared delivery route</span><h2>Route ${route.id}</h2><p class="meta">${route.area} · ${route.deliveryDay} · Rider self-claiming · Code ${route.zoneCode||routeZoneCode(route.area)}</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
@@ -2345,12 +2596,12 @@
         </table>
       </div>
 
-      <div class="info-notice" style="margin-top:14px"><strong>Collective wisdom layer:</strong> ${route.driverWisdom||routeWisdomFor(route.area)}</div>
+      <div class="info-notice" style="margin-top:14px"><strong>Rider wisdom layer:</strong> ${route.driverWisdom||routeWisdomFor(route.area)}</div>
 
       <div class="modal-actions">
         <button class="secondary" onclick="closeModal()">Close</button>
-        ${route.status==="Scheduled" ? `<button class="primary" onclick="closeModal();startRoute('${route.id}')">Start delivery</button>` : ""}
-        ${route.status==="In transit" ? `<button class="primary" onclick="closeModal();completeRoute('${route.id}')">Complete route</button>` : ""}
+        ${route.status==="Ready to start" ? `<button class="primary" onclick="closeModal();startRoute('${route.id}')">Start delivery</button>` : ""}
+        ${route.status==="In transit" && allRouteLegsCompleted(route) ? `<button class="primary" onclick="closeModal();completeRoute('${route.id}')">Complete route</button>` : ""}
       </div>
     `,true);
   }
