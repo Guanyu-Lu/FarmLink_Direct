@@ -469,9 +469,9 @@
       fill:#eef7eb;
     }
     .clean-map-zone-label{
-      fill:#67736a;
-      font-size:12px;
-      font-weight:800;
+      fill:#566257;
+      font-size:11.5px;
+      font-weight:700;
       text-anchor:middle;
     }
     .clean-map-road{
@@ -529,6 +529,37 @@
       stroke-width:2;
       filter:url(#cleanMapShadow);
     }
+
+    .clean-map-panel-title{
+      fill:#263328;
+      font-size:14px;
+      font-weight:900;
+      text-anchor:middle;
+    }
+    .clean-map-panel-sub{
+      fill:#5f6b61;
+      font-size:11.5px;
+      font-weight:700;
+      text-anchor:middle;
+    }
+    .clean-map-badge{
+      fill:#2f6b3c;
+      stroke:#ffffff;
+      stroke-width:2;
+      filter:url(#cleanMapShadow);
+    }
+    .clean-map-badge-text{
+      fill:#ffffff;
+      font-size:14px;
+      font-weight:900;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+    .clean-map-active-panel{
+      stroke:#2f6b3c;
+      stroke-width:3;
+    }
+
     .clean-map-driver-icon{
       font-size:22px;
       text-anchor:middle;
@@ -1318,7 +1349,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v13_clean_map_truck_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v15_clean_no_overlap_map_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1756,16 +1787,25 @@
 
   function mapCoordinate(pointId){
     const coords = {
-      farm:{x:82,y:260},
-      pickup:{x:245,y:215},
-      area:{x:425,y:150},
-      buyer:{x:600,y:112}
+      farm:{x:92,y:254},
+      pickup:{x:268,y:210},
+      area:{x:458,y:146},
+      buyer:{x:620,y:103}
     };
     return coords[pointId] || coords.area;
   }
 
   function renderVirtualMapSvg(route,points,activePoint){
     const activeCoord = activePoint ? mapCoordinate(activePoint) : null;
+    const buyerLabel = route.area.length>18 ? route.area.slice(0,18)+"…" : route.area;
+
+    const panels = [
+      {id:"farm",num:"1",title:"Farm",sub:"Green Valley Farm",x:28,y:214,w:150,h:78,bx:47,by:232},
+      {id:"pickup",num:"2",title:"Pickup hub",sub:"Selayang Pickup Hub",x:190,y:172,w:156,h:76,bx:209,by:190},
+      {id:"area",num:"3",title:"Area hub",sub:"Bukit Bintang Micro Hub",x:374,y:114,w:168,h:76,bx:393,by:132},
+      {id:"buyer",num:"4",title:"Buyer area",sub:buyerLabel,x:548,y:74,w:108,h:74,bx:567,by:92}
+    ];
+
     return `
       <svg class="clean-map-svg" viewBox="0 0 680 330" role="img" aria-label="Clean illustrative Kuala Lumpur delivery map">
         <defs>
@@ -1776,41 +1816,30 @@
 
         <rect class="clean-map-bg" x="0" y="0" width="680" height="330"/>
 
-        <rect class="clean-map-zone alt" x="30" y="210" width="135" height="80" rx="22"/>
-        <rect class="clean-map-zone" x="188" y="172" width="135" height="82" rx="22"/>
-        <rect class="clean-map-zone alt" x="360" y="110" width="138" height="86" rx="22"/>
-        <rect class="clean-map-zone" x="535" y="70" width="112" height="82" rx="22"/>
-
-        <text class="clean-map-zone-label" x="98" y="302">Farm belt</text>
-        <text class="clean-map-zone-label" x="256" y="266">Pickup hub</text>
-        <text class="clean-map-zone-label" x="429" y="208">Area hub</text>
-        <text class="clean-map-zone-label" x="591" y="164">${route.area.length>18 ? route.area.slice(0,18)+"…" : route.area}</text>
-
+        <!-- Subtle road network stays in the background -->
         <path class="clean-map-road" d="M52 86 C150 105, 236 92, 322 76 S500 62, 626 92"/>
         <path class="clean-map-road-inner" d="M52 86 C150 105, 236 92, 322 76 S500 62, 626 92"/>
-
         <path class="clean-map-road" d="M74 286 C150 250, 217 238, 295 220 S464 164, 618 128"/>
         <path class="clean-map-road-inner" d="M74 286 C150 250, 217 238, 295 220 S464 164, 618 128"/>
-
         <path class="clean-map-road" d="M240 45 C235 108, 250 174, 266 278"/>
         <path class="clean-map-road-inner" d="M240 45 C235 108, 250 174, 266 278"/>
-
         <path class="clean-map-road" d="M450 52 C430 112, 437 178, 475 278"/>
         <path class="clean-map-road-inner" d="M450 52 C430 112, 437 178, 475 278"/>
 
-        <path class="clean-map-route-bg" d="M82 260 C160 242, 190 230, 245 215 C320 195, 352 169, 425 150 C500 132, 545 120, 600 112"/>
-        <path class="clean-map-route" d="M82 260 C160 242, 190 230, 245 215 C320 195, 352 169, 425 150 C500 132, 545 120, 600 112"/>
+        <!-- Delivery route drawn behind the panels so it never covers labels -->
+        <path class="clean-map-route-bg" d="M80 254 C154 235, 195 223, 268 210 C339 195, 386 161, 458 146 C532 128, 575 113, 620 103"/>
+        <path class="clean-map-route" d="M80 254 C154 235, 195 223, 268 210 C339 195, 386 161, 458 146 C532 128, 575 113, 620 103"/>
 
-        ${points.map(point=>{
-          const c = mapCoordinate(point.id);
-          const active = point.id===activePoint;
-          return `
-            <g>
-              <circle class="clean-map-node ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="22"></circle>
-              <text class="clean-map-node-number ${active?"active":""}" x="${c.x}" y="${c.y}">${point.icon}</text>
-            </g>
-          `;
-        }).join("")}
+        <!-- Opaque checkpoint panels sit above roads and route -->
+        ${panels.map(panel=>`
+          <g>
+            <rect class="clean-map-zone ${panel.id===activePoint?"clean-map-active-panel":""}" x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" rx="20"/>
+            <circle class="clean-map-badge" cx="${panel.bx}" cy="${panel.by}" r="15"/>
+            <text class="clean-map-badge-text" x="${panel.bx}" y="${panel.by+1}">${panel.num}</text>
+            <text class="clean-map-panel-title" x="${panel.x+panel.w/2}" y="${panel.y+33}">${panel.title}</text>
+            <text class="clean-map-panel-sub" x="${panel.x+panel.w/2}" y="${panel.y+55}">${panel.sub}</text>
+          </g>
+        `).join("")}
 
         ${activeCoord ? `
           <g transform="translate(${activeCoord.x},${activeCoord.y-43})">
@@ -1836,7 +1865,7 @@
         </div>
         <div class="virtual-map-wrap">
           <div class="clean-map-caption">
-            <strong>Illustrative route map</strong>
+            <strong>Route map</strong>
             <span>1 Farm → 2 Pickup hub → 3 Area hub → 4 Buyer area</span>
           </div>
           ${renderVirtualMapSvg(route,points,activePoint)}
