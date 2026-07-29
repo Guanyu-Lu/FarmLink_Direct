@@ -1349,7 +1349,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v16_independent_map_search_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v17_buyer_live_driver_map_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1692,6 +1692,17 @@
     route.legStatus[key] = "Accepted";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
+    route.driverSearches = route.driverSearches || {};
+    const segment = route.relaySegments[segmentIndex];
+    route.driverSearches[key] = {
+      driver:currentDriver().name,
+      point:"accepted-start",
+      pointLabel:"accepted task starting point",
+      location:segment?.from || "Route starting point",
+      mapPoint:activeMapPointForSegment(segmentIndex,"pickup"),
+      time:nowLabel(),
+      updatedAt:Date.now()
+    };
     updateRouteAcceptanceStatus(route);
     saveState();
     refreshAll();
@@ -1743,7 +1754,8 @@
         pointLabel:"completed destination",
         location:completedSegment.to,
         mapPoint:activeMapPointForSegment(segmentIndex,"destination"),
-        time:nowLabel()
+        time:nowLabel(),
+        updatedAt:Date.now()
       };
     }
     route.relaySegments = buildRelaySegments(route,orders);
@@ -1784,7 +1796,8 @@
       return searches[activeLegKey] || null;
     }
     const values = Object.values(searches);
-    return values.length ? values[values.length-1] : null;
+    if(!values.length) return null;
+    return values.slice().sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0))[values.length-1];
   }
 
   function mapCoordinate(pointId){
@@ -1854,9 +1867,9 @@
   }
 
 
-  function renderRouteMap(route,orders,activeLegKey=null){
+  function renderRouteMap(route,orders,activeLegKey=null,trackingOverride=null){
     const points = routeMapPoints(route,orders);
-    const latestSearch = latestRouteSearch(route,activeLegKey);
+    const latestSearch = trackingOverride || latestRouteSearch(route,activeLegKey);
     const activePoint = latestSearch?.mapPoint || null;
 
     return `
@@ -1887,7 +1900,9 @@
         </div>
         <div class="map-search-result">
           ${latestSearch
-            ? `<strong>Map search result:</strong> ${latestSearch.driver} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
+            ? (latestSearch.isTrackingEstimate
+                ? `<strong>Driver position:</strong> ${latestSearch.driver} — ${latestSearch.location}. <span class="small">${latestSearch.pointLabel}</span>`
+                : `<strong>Map search result:</strong> ${latestSearch.driver} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`)
             : `<strong>Map search result:</strong> No driver map search for this route view yet. This virtual logistics map uses prototype farm and hub locations.`
           }
         </div>
@@ -1914,7 +1929,8 @@
       pointLabel:pointType==="pickup" ? "pickup location" : "destination",
       location,
       mapPoint:activeMapPointForSegment(segmentIndex,pointType),
-      time:nowLabel()
+      time:nowLabel(),
+      updatedAt:Date.now()
     };
     saveState();
     refreshAll();
@@ -2775,13 +2791,13 @@
       };
     }
     const current = currentRouteSegment(route);
-    const latest = latestRouteSearch(route,current?.key);
+    const latest = latestRouteSearch(route,null);
     if(latest){
       return {
         driver:latest.driver,
         location:latest.location,
         activity:`Searched ${latest.pointLabel}`,
-        activeLegKey:current?.key
+        activeLegKey:null
       };
     }
     return {
@@ -2791,6 +2807,33 @@
       activeLegKey:current?.key
     };
   }
+
+
+  function mapPointForRouteStage(stageKey){
+    if(stageKey==="leg1") return "farm";
+    if(stageKey==="leg2") return "pickup";
+    if(stageKey==="leg3") return "area";
+    if(stageKey==="completed") return "buyer";
+    return "farm";
+  }
+
+  function buyerTrackingMapState(route){
+    const latest = latestRouteSearch(route,null);
+    if(latest) return latest;
+
+    const current = currentRouteSegment(route);
+    return {
+      driver:current?.driver || "Waiting for driver",
+      point:"route-stage",
+      pointLabel:"Estimated from the current delivery stage until a driver searches a location.",
+      location:current?.location || "Route not active yet",
+      mapPoint:mapPointForRouteStage(current?.key),
+      time:nowLabel(),
+      updatedAt:Date.now(),
+      isTrackingEstimate:true
+    };
+  }
+
 
   function renderBuyerLiveTracking(order){
     const route = routeForOrder(order);
@@ -2813,7 +2856,7 @@
           <div class="tracking-tile"><span>Latest location</span><strong>${location.location}</strong></div>
           <div class="tracking-tile"><span>Current activity</span><strong>${location.activity}</strong></div>
         </div>
-        ${route ? renderRouteMap(route,orders,location.activeLegKey) : `
+        ${route ? renderRouteMap(route,orders,null,buyerTrackingMapState(route)) : `
           <div class="info-notice" style="margin-top:12px;margin-bottom:0">
             The order is not on a shared route yet. Once the farm marks it ready and the route is published, driver location and ETA will appear here.
           </div>
