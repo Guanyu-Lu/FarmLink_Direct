@@ -1349,7 +1349,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v15_clean_no_overlap_map_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v16_independent_map_search_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1780,7 +1780,9 @@
 
   function latestRouteSearch(route,activeLegKey=null){
     const searches = route?.driverSearches || {};
-    if(activeLegKey && searches[activeLegKey]) return searches[activeLegKey];
+    if(activeLegKey){
+      return searches[activeLegKey] || null;
+    }
     const values = Object.values(searches);
     return values.length ? values[values.length-1] : null;
   }
@@ -1886,7 +1888,7 @@
         <div class="map-search-result">
           ${latestSearch
             ? `<strong>Map search result:</strong> ${latestSearch.driver} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
-            : `<strong>Map search result:</strong> No driver map search yet. This is an illustrative virtual logistics map for the MVP because the farm and hub data are prototype locations.`
+            : `<strong>Map search result:</strong> No driver map search for this route view yet. This virtual logistics map uses prototype farm and hub locations.`
           }
         </div>
       </div>
@@ -3211,8 +3213,8 @@
         <div class="small">Driver: ${claim || "Open to claim"}</div>
         <div class="small">Route status: ${route.status}</div>
         <div class="route-actions">
-          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'pickup')">Search pickup</button>` : ""}
-          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'destination')">Search destination</button>` : ""}
+          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'pickup')">Search this pickup</button>` : ""}
+          ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'destination')">Search this destination</button>` : ""}
           ${canAccept ? `<button class="primary" onclick="acceptDriverTask('${route.id}',${index})">Accept task</button>` : ""}
           ${canRelease ? `<button class="secondary" onclick="releaseDriverTask('${route.id}',${index})">Release</button>` : ""}
           ${canComplete ? `<button class="primary" onclick="completeDriverTask('${route.id}',${index})">Mark task complete</button>` : ""}
