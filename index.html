@@ -432,6 +432,109 @@
       width:18px;height:4px;border-radius:999px;background:#b7dce6;display:inline-block;
     }
 
+
+    .clean-map-caption{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:750;
+    }
+    .clean-map-caption strong{
+      color:var(--brand);
+      font-size:13px;
+    }
+    .clean-map-svg{
+      width:100%;
+      height:auto;
+      display:block;
+      border-radius:16px;
+      background:#f8fbf6;
+      border:1px solid rgba(219,229,215,.96);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
+    }
+    .clean-map-bg{
+      fill:#f8fbf6;
+    }
+    .clean-map-zone{
+      fill:#ffffff;
+      stroke:#dce8d8;
+      stroke-width:1.5;
+    }
+    .clean-map-zone.alt{
+      fill:#eef7eb;
+    }
+    .clean-map-zone-label{
+      fill:#67736a;
+      font-size:12px;
+      font-weight:800;
+      text-anchor:middle;
+    }
+    .clean-map-road{
+      fill:none;
+      stroke:#d8e2d5;
+      stroke-width:18;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .clean-map-road-inner{
+      fill:none;
+      stroke:#ffffff;
+      stroke-width:10;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .clean-map-route-bg{
+      fill:none;
+      stroke:#dcefd7;
+      stroke-width:19;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .clean-map-route{
+      fill:none;
+      stroke:#2f6b3c;
+      stroke-width:7;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      stroke-dasharray:16 10;
+    }
+    .clean-map-node{
+      fill:#ffffff;
+      stroke:#2f6b3c;
+      stroke-width:4;
+      filter:url(#cleanMapShadow);
+    }
+    .clean-map-node.active{
+      fill:#2f6b3c;
+      stroke:#1f4929;
+    }
+    .clean-map-node-number{
+      fill:#2f6b3c;
+      font-size:16px;
+      font-weight:900;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+    .clean-map-node-number.active{
+      fill:#ffffff;
+    }
+    .clean-map-driver-marker{
+      fill:#1f3424;
+      stroke:#ffffff;
+      stroke-width:2;
+      filter:url(#cleanMapShadow);
+    }
+    .clean-map-driver-icon{
+      font-size:22px;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+
     .virtual-map-svg{
       width:100%;
       height:auto;
@@ -999,7 +1102,7 @@
           <button class="primary" onclick="selectRole('admin')">Continue as coordinator</button>
         </article>
         <article class="role-card">
-          <div class="role-icon">🚴</div>
+          <div class="role-icon">🚚</div>
           <h3>Driver</h3>
           <p>View open pickup, hub-transfer and final-mile tasks, then self-accept suitable delivery legs.</p>
           <button class="primary" onclick="selectRole('driver')">Continue as driver</button>
@@ -1105,7 +1208,7 @@
       <div class="dashboard-head">
         <div>
           <h2>Driver Task Board</h2>
-          <p id="driverContext">Aina Delivery Driver · Self-claim delivery legs</p>
+          <p id="driverContext">Aina Delivery Driver · Self-claim van/truck delivery legs</p>
         </div>
         <div class="profile-switch">
           <label for="driverProfileSelect">View as driver</label>
@@ -1215,7 +1318,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v12_driver_map_reset_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v13_clean_map_truck_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1653,10 +1756,10 @@
 
   function mapCoordinate(pointId){
     const coords = {
-      farm:{x:92,y:318},
-      pickup:{x:266,y:265},
-      area:{x:462,y:184},
-      buyer:{x:666,y:118}
+      farm:{x:82,y:260},
+      pickup:{x:245,y:215},
+      area:{x:425,y:150},
+      buyer:{x:600,y:112}
     };
     return coords[pointId] || coords.area;
   }
@@ -1664,77 +1767,61 @@
   function renderVirtualMapSvg(route,points,activePoint){
     const activeCoord = activePoint ? mapCoordinate(activePoint) : null;
     return `
-      <svg class="virtual-map-svg" viewBox="0 0 760 420" role="img" aria-label="Illustrative virtual Kuala Lumpur pilot logistics map">
+      <svg class="clean-map-svg" viewBox="0 0 680 330" role="img" aria-label="Clean illustrative Kuala Lumpur delivery map">
         <defs>
-          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1f3424" flood-opacity=".22"/>
+          <filter id="cleanMapShadow" x="-25%" y="-25%" width="150%" height="150%">
+            <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#1f3424" flood-opacity=".18"/>
           </filter>
-          <linearGradient id="mapBg" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stop-color="#f8fbf5"/>
-            <stop offset="100%" stop-color="#eef6ea"/>
-          </linearGradient>
         </defs>
 
-        <rect x="0" y="0" width="760" height="420" fill="url(#mapBg)"/>
-        <path class="map-water" d="M34 112 C132 70, 188 104, 252 82 C334 54, 407 72, 486 52 C575 28, 642 44, 725 28"/>
-        <path class="map-water" d="M66 382 C160 346, 216 366, 304 338 C398 308, 505 326, 700 292"/>
+        <rect class="clean-map-bg" x="0" y="0" width="680" height="330"/>
 
-        <rect class="map-district soft" x="34" y="218" width="166" height="128" rx="24"/>
-        <rect class="map-district" x="208" y="205" width="162" height="126" rx="24"/>
-        <rect class="map-district soft" x="386" y="130" width="168" height="128" rx="24"/>
-        <rect class="map-district" x="570" y="72" width="146" height="118" rx="24"/>
-        <rect class="map-park" x="486" y="268" width="178" height="74" rx="26"/>
-        <rect class="map-park" x="102" y="58" width="94" height="58" rx="22"/>
+        <rect class="clean-map-zone alt" x="30" y="210" width="135" height="80" rx="22"/>
+        <rect class="clean-map-zone" x="188" y="172" width="135" height="82" rx="22"/>
+        <rect class="clean-map-zone alt" x="360" y="110" width="138" height="86" rx="22"/>
+        <rect class="clean-map-zone" x="535" y="70" width="112" height="82" rx="22"/>
 
-        <text class="district-label" x="116" y="244">Farm belt</text>
-        <text class="district-sub" x="116" y="260">supplier origin</text>
-        <text class="district-label" x="290" y="228">Pickup zone</text>
-        <text class="district-sub" x="290" y="244">farm hub</text>
-        <text class="district-label" x="470" y="154">KL area hub</text>
-        <text class="district-sub" x="470" y="170">sorting point</text>
-        <text class="district-label" x="642" y="92">${route.area}</text>
-        <text class="district-sub" x="642" y="108">buyer district</text>
-        <text class="district-label" x="574" y="310">Urban logistics buffer</text>
+        <text class="clean-map-zone-label" x="98" y="302">Farm belt</text>
+        <text class="clean-map-zone-label" x="256" y="266">Pickup hub</text>
+        <text class="clean-map-zone-label" x="429" y="208">Area hub</text>
+        <text class="clean-map-zone-label" x="591" y="164">${route.area.length>18 ? route.area.slice(0,18)+"…" : route.area}</text>
 
-        <path class="map-major-road" d="M48 74 C150 116, 222 118, 318 104 S498 86, 704 122"/>
-        <path class="map-road-inner" d="M48 74 C150 116, 222 118, 318 104 S498 86, 704 122"/>
-        <path class="map-major-road" d="M126 378 C188 300, 256 278, 332 252 S500 190, 692 170"/>
-        <path class="map-road-inner" d="M126 378 C188 300, 256 278, 332 252 S500 190, 692 170"/>
-        <path class="map-major-road" d="M238 56 C258 132, 250 210, 282 344"/>
-        <path class="map-road-inner" d="M238 56 C258 132, 250 210, 282 344"/>
-        <path class="map-major-road" d="M510 82 C498 146, 510 214, 560 356"/>
-        <path class="map-road-inner" d="M510 82 C498 146, 510 214, 560 356"/>
+        <path class="clean-map-road" d="M52 86 C150 105, 236 92, 322 76 S500 62, 626 92"/>
+        <path class="clean-map-road-inner" d="M52 86 C150 105, 236 92, 322 76 S500 62, 626 92"/>
 
-        <circle class="map-hub-ring" cx="266" cy="265" r="55"/>
-        <circle class="map-hub-ring" cx="462" cy="184" r="58"/>
+        <path class="clean-map-road" d="M74 286 C150 250, 217 238, 295 220 S464 164, 618 128"/>
+        <path class="clean-map-road-inner" d="M74 286 C150 250, 217 238, 295 220 S464 164, 618 128"/>
 
-        <path class="delivery-route-bg" d="M92 318 C160 292, 201 282, 266 265 C352 242, 386 207, 462 184 C544 160, 595 136, 666 118"/>
-        <path class="delivery-route" d="M92 318 C160 292, 201 282, 266 265 C352 242, 386 207, 462 184 C544 160, 595 136, 666 118"/>
+        <path class="clean-map-road" d="M240 45 C235 108, 250 174, 266 278"/>
+        <path class="clean-map-road-inner" d="M240 45 C235 108, 250 174, 266 278"/>
+
+        <path class="clean-map-road" d="M450 52 C430 112, 437 178, 475 278"/>
+        <path class="clean-map-road-inner" d="M450 52 C430 112, 437 178, 475 278"/>
+
+        <path class="clean-map-route-bg" d="M82 260 C160 242, 190 230, 245 215 C320 195, 352 169, 425 150 C500 132, 545 120, 600 112"/>
+        <path class="clean-map-route" d="M82 260 C160 242, 190 230, 245 215 C320 195, 352 169, 425 150 C500 132, 545 120, 600 112"/>
 
         ${points.map(point=>{
           const c = mapCoordinate(point.id);
           const active = point.id===activePoint;
           return `
-            <g filter="url(#softShadow)">
-              <circle class="map-dot ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="23"></circle>
-              <text class="map-num ${active?"active":""}" x="${c.x}" y="${c.y}">${point.icon}</text>
-            </g>
             <g>
-              <text class="map-label" x="${c.x}" y="${c.y+43}">${point.label}</text>
-              <text class="map-sub" x="${c.x}" y="${c.y+60}">${point.value.length>28 ? point.value.slice(0,28)+"…" : point.value}</text>
+              <circle class="clean-map-node ${active?"active":""}" cx="${c.x}" cy="${c.y}" r="22"></circle>
+              <text class="clean-map-node-number ${active?"active":""}" x="${c.x}" y="${c.y}">${point.icon}</text>
             </g>
           `;
         }).join("")}
 
         ${activeCoord ? `
-          <g transform="translate(${activeCoord.x},${activeCoord.y-48})">
-            <rect class="driver-marker-box" x="-20" y="-15" width="40" height="30" rx="12"/>
-            <text class="driver-marker-label" x="0" y="1">🚚</text>
+          <g transform="translate(${activeCoord.x},${activeCoord.y-43})">
+            <rect class="clean-map-driver-marker" x="-24" y="-17" width="48" height="34" rx="13"/>
+            <text class="clean-map-driver-icon" x="0" y="1">🚚</text>
           </g>
         ` : ""}
       </svg>
     `;
   }
+
 
   function renderRouteMap(route,orders,activeLegKey=null){
     const points = routeMapPoints(route,orders);
@@ -1748,11 +1835,15 @@
           <span class="route-code">${route.zoneCode||routeZoneCode(route.area)}</span>
         </div>
         <div class="virtual-map-wrap">
+          <div class="clean-map-caption">
+            <strong>Illustrative route map</strong>
+            <span>1 Farm → 2 Pickup hub → 3 Area hub → 4 Buyer area</span>
+          </div>
           ${renderVirtualMapSvg(route,points,activePoint)}
           <div class="map-legend">
-            <span><i class="legend-dot"></i> Route points</span>
-            <span><i class="legend-road"></i> City roads</span>
-            <span><i class="legend-water"></i> Water / urban boundary</span>
+            <span><i class="legend-dot"></i> Delivery checkpoints</span>
+            <span><i class="legend-road"></i> Main road network</span>
+            <span>🚚 Driver vehicle position</span>
           </div>
           <div class="map-location-grid">
             ${points.map(point=>`
