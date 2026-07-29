@@ -305,6 +305,108 @@
 
 
 
+
+    .route-map-card{
+      margin-top:12px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:
+        linear-gradient(90deg, rgba(47,107,60,.06) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(47,107,60,.06) 1px, transparent 1px),
+        #fbfdf9;
+      background-size:28px 28px;
+      padding:14px;
+    }
+    .route-map-title{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+      margin-bottom:11px;
+      flex-wrap:wrap;
+    }
+    .route-map-line{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:9px;
+      position:relative;
+    }
+    .route-map-line:before{
+      content:"";
+      position:absolute;
+      left:8%;
+      right:8%;
+      top:28px;
+      height:3px;
+      background:linear-gradient(90deg,#aacaa2,#2f6b3c);
+      border-radius:999px;
+      z-index:0;
+    }
+    .map-point{
+      position:relative;
+      z-index:1;
+      min-height:92px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      padding:10px;
+      text-align:center;
+    }
+    .map-pin{
+      width:34px;
+      height:34px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      margin:0 auto 6px;
+      background:var(--surface-2);
+      color:var(--brand);
+      font-weight:900;
+      border:2px solid #c8ddc2;
+    }
+    .map-point.active{
+      border-color:#79a96f;
+      box-shadow:0 0 0 3px rgba(47,107,60,.11);
+    }
+    .map-point.active .map-pin{
+      background:var(--brand);
+      color:#fff;
+      border-color:var(--brand);
+    }
+    .map-search-result{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:var(--info-bg);
+      border:1px solid #c8e4ec;
+      color:var(--info);
+      font-size:12px;
+      line-height:1.45;
+    }
+    .farm-group-card{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      padding:13px;
+      margin:10px 0;
+    }
+    .farm-group-card strong{
+      color:var(--brand);
+    }
+    .farm-group-items{
+      margin:8px 0 0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    @media(max-width:760px){
+      .route-map-line{grid-template-columns:1fr}
+      .route-map-line:before{display:none}
+      .map-point{text-align:left}
+      .map-pin{margin:0 8px 0 0;display:inline-grid;vertical-align:middle}
+    }
+
     .pricing-rule-grid{
       display:grid;
       grid-template-columns:repeat(3,1fr);
@@ -818,7 +920,7 @@
 
   function loadState(){
     try{
-      const saved = localStorage.getItem("farmlink_direct_kl_demo_v9_rider_self_claim_state");
+      const saved = localStorage.getItem("farmlink_direct_kl_demo_v10_map_farm_group_state");
       return saved ? JSON.parse(saved) : clone(seedState);
     }catch(error){
       return clone(seedState);
@@ -826,7 +928,7 @@
   }
 
   function saveState(){
-    localStorage.setItem("farmlink_direct_kl_demo_v9_rider_self_claim_state", JSON.stringify(state));
+    localStorage.setItem("farmlink_direct_kl_demo_v10_map_farm_group_state", JSON.stringify(state));
   }
 
   ensureStateDefaults();
@@ -836,6 +938,61 @@
 
   function money(value){ return `SGD ${Number(value).toFixed(2)}`; }
   function unique(values){ return [...new Set(values)]; }
+
+
+  function orderItems(order){
+    if(order.items && order.items.length) return order.items;
+    return [{
+      productId:order.productId,
+      product:order.product,
+      qty:Number(order.qty||0),
+      price:order.produceCost && order.qty ? Number(order.produceCost)/Number(order.qty) : 0
+    }];
+  }
+
+  function orderProductLabel(order){
+    const items = orderItems(order);
+    return items.length>1 ? items.map(item=>item.product).join(" + ") : items[0].product;
+  }
+
+  function orderQuantityLabel(order){
+    const items = orderItems(order);
+    const total = items.reduce((sum,item)=>sum+Number(item.qty||0),0);
+    return items.length>1 ? `${total} kg total` : `${total} kg`;
+  }
+
+  function orderItemList(order){
+    const items = orderItems(order);
+    return items.length>1
+      ? `<ul class="farm-group-items">${items.map(item=>`<li>${item.product} · ${item.qty} kg</li>`).join("")}</ul>`
+      : "";
+  }
+
+  function cartFarmOrderGroups(cartItems){
+    const groups = new Map();
+    cartItems.forEach(item=>{
+      const key = `${item.farmId||item.farm}|${item.farm}|${item.area}|${item.deliveryDay}`;
+      if(!groups.has(key)){
+        groups.set(key,{
+          key,
+          deliveryKey:`${item.area}-${item.deliveryDay}`,
+          farmId:item.farmId || null,
+          farm:item.farm,
+          area:item.area,
+          deliveryDay:item.deliveryDay,
+          items:[],
+          produceCost:0,
+          qty:0
+        });
+      }
+      const group = groups.get(key);
+      group.items.push(item);
+      group.produceCost += Number(item.price||0)*Number(item.qty||0);
+      group.qty += Number(item.qty||0);
+    });
+    return [...groups.values()];
+  }
+
 
   function groupDemand(product){
     return Math.max(0,Math.min(Number(product.current)||0,Number(product.target)||0));
@@ -916,6 +1073,7 @@
     state.routes.forEach(route=>{
       if(!route.riderClaims) route.riderClaims = {};
       if(!route.legStatus) route.legStatus = {};
+      if(!route.riderSearches) route.riderSearches = {};
       if(route.status==="Scheduled") route.status = Object.keys(route.riderClaims).length ? "Ready to start" : "Open for rider acceptance";
       const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
       route.relaySegments = buildRelaySegments(route,orders);
@@ -1137,6 +1295,87 @@
     saveState();
     refreshAll();
   }
+
+
+  function routeMapPoints(route,orders){
+    const farms = unique(orders.map(o=>o.farm));
+    const buyers = unique(orders.map(o=>o.buyer));
+    const primaryFarm = farms[0] || "Farm supplier";
+    return [
+      {id:"farm",label:"Farm",value:farms.join(", ") || primaryFarm,icon:"1"},
+      {id:"pickup",label:"Pickup hub",value:pickupHubForFarm(primaryFarm),icon:"2"},
+      {id:"area",label:"Area hub",value:hubForArea(route.area),icon:"3"},
+      {id:"buyer",label:"Buyer area",value:buyers.join(", ") || route.area,icon:"4"}
+    ];
+  }
+
+  function activeMapPointForSegment(segmentIndex,pointType){
+    if(pointType==="pickup"){
+      return segmentIndex===0 ? "farm" : segmentIndex===1 ? "pickup" : "area";
+    }
+    return segmentIndex===0 ? "pickup" : segmentIndex===1 ? "area" : "buyer";
+  }
+
+  function renderRouteMap(route,orders,activeLegKey=null){
+    const points = routeMapPoints(route,orders);
+    const searches = route.riderSearches || {};
+    const latestSearch = activeLegKey && searches[activeLegKey]
+      ? searches[activeLegKey]
+      : Object.values(searches).slice(-1)[0];
+
+    const activePoint = latestSearch?.mapPoint || null;
+
+    return `
+      <div class="route-map-card">
+        <div class="route-map-title">
+          <strong>Rider route map</strong>
+          <span class="route-code">${route.zoneCode||routeZoneCode(route.area)}</span>
+        </div>
+        <div class="route-map-line">
+          ${points.map(point=>`
+            <div class="map-point ${point.id===activePoint?"active":""}">
+              <div class="map-pin">${point.icon}</div>
+              <strong>${point.label}</strong>
+              <div class="small">${point.value}</div>
+            </div>
+          `).join("")}
+        </div>
+        <div class="map-search-result">
+          ${latestSearch
+            ? `<strong>Map search result:</strong> ${latestSearch.rider} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`
+            : `<strong>Map search result:</strong> No rider search yet. Riders can search pickup or destination before accepting or completing a task.`
+          }
+        </div>
+      </div>
+    `;
+  }
+
+  function searchRiderLocation(routeId,segmentIndex,pointType){
+    const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    if(route.status==="Delivered"){
+      showToast("This route is completed, so map search is locked.");
+      return;
+    }
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    const segment = buildRelaySegments(route,orders)[segmentIndex];
+    if(!segment) return;
+    const key = legKey(segmentIndex);
+    const location = pointType==="pickup" ? segment.from : segment.to;
+    route.riderSearches = route.riderSearches || {};
+    route.riderSearches[key] = {
+      rider:currentRider().name,
+      point:pointType,
+      pointLabel:pointType==="pickup" ? "pickup location" : "destination",
+      location,
+      mapPoint:activeMapPointForSegment(segmentIndex,pointType),
+      time:nowLabel()
+    };
+    saveState();
+    refreshAll();
+    showToast(`${currentRider().name} searched ${location} on the route map.`);
+  }
+
 
   function hubForArea(area){
     const hubs = {
@@ -1735,7 +1974,17 @@
       </div>
 
       <div class="summary">
-        ${cartItems.map(item=>`<div class="summary-row"><span>${item.product} · ${item.qty} kg</span><strong>${money(item.price*item.qty)}</strong></div>`).join("")}
+        <strong>Farm-grouped order summary</strong>
+        ${cartFarmOrderGroups(cartItems).map(group=>`
+          <div class="farm-group-card">
+            <strong>${group.farm}</strong>
+            <div class="small">${group.area} · ${group.deliveryDay} · ${group.qty} kg total</div>
+            <ul class="farm-group-items">
+              ${group.items.map(item=>`<li>${item.product} · ${item.qty} kg · ${money(item.price*item.qty)}</li>`).join("")}
+            </ul>
+          </div>
+        `).join("")}
+        <div class="summary-row"><span>Produce</span><strong>${money(produceTotal)}</strong></div>
         <div class="summary-row"><span>Distance + weight delivery</span><strong>${money(deliveryTotal)}</strong></div>
         <div class="summary-row total"><span>Total</span><strong>${money(produceTotal+deliveryTotal)}</strong></div>
       </div>
@@ -1761,36 +2010,50 @@
     const buyer = $("#checkoutBuyer").value.trim() || state.buyerProfile.name;
     const batchId = makeId("B");
     const cartItems = currentBuyerCart();
+    const farmGroups = cartFarmOrderGroups(cartItems);
     const deliveryGroups = calculateCartDeliveryGroups(cartItems);
     const deliveryFeeByKey = new Map(deliveryGroups.map(group=>[group.key,group.fee]));
     const deliveryFeeAssigned = new Set();
 
-    cartItems.forEach(item=>{
-      const product = state.products.find(p=>p.id===item.productId);
-      const deliveryKey = `${item.area}-${item.deliveryDay}`;
-      const deliveryFee = deliveryFeeAssigned.has(deliveryKey) ? 0 : (deliveryFeeByKey.get(deliveryKey) || calculateDeliveryFee(item,item.area,item.qty));
-      deliveryFeeAssigned.add(deliveryKey);
+    farmGroups.forEach(group=>{
+      const deliveryFee = deliveryFeeAssigned.has(group.deliveryKey)
+        ? 0
+        : (deliveryFeeByKey.get(group.deliveryKey) || calculateDeliveryFee(group.items[0],group.area,group.qty));
+      deliveryFeeAssigned.add(group.deliveryKey);
 
-      const produceCost = item.price*item.qty;
+      const items = group.items.map(item=>({
+        productId:item.productId,
+        product:item.product,
+        qty:Number(item.qty||0),
+        price:Number(item.price||0),
+        produceCost:Number(item.price||0)*Number(item.qty||0)
+      }));
+
       state.orders.push({
         id:makeId("FL"),
         batchId,
         buyer,
-        area:item.area,
-        productId:item.productId,
-        product:item.product,
-        farm:item.farm,
-        qty:item.qty,
-        produceCost,
+        area:group.area,
+        productId:items.length===1 ? items[0].productId : "multiple",
+        productIds:items.map(item=>item.productId),
+        product:items.length===1 ? items[0].product : items.map(item=>item.product).join(" + "),
+        items,
+        farmId:group.farmId,
+        farm:group.farm,
+        qty:group.qty,
+        produceCost:group.produceCost,
         deliveryFee,
-        total:produceCost+deliveryFee,
-        deliveryDay:item.deliveryDay,
+        total:group.produceCost+deliveryFee,
+        deliveryDay:group.deliveryDay,
         status:"Awaiting farm confirmation",
         createdAt:nowLabel(),
         routeId:null
       });
 
-      product.current = Math.min(product.target,groupDemand(product)+item.qty);
+      group.items.forEach(item=>{
+        const product = state.products.find(p=>p.id===item.productId);
+        if(product) product.current = Math.min(product.target,groupDemand(product)+Number(item.qty||0));
+      });
     });
 
     state.buyerProfile.name = buyer;
@@ -1799,7 +2062,7 @@
     closeModal();
     refreshAll();
     setBuyerTab("orders");
-    showToast("Order placed. The farm has been notified.");
+    showToast("Order placed. Same-farm products were merged into farm batch orders.");
   }
 
   function renderBuyerOrders(){
@@ -1816,10 +2079,10 @@
             <article class="order-card">
               <div>
                 <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">
-                  <h4>${order.product} · ${order.qty} kg</h4>
+                  <h4>${orderProductLabel(order)} · ${orderQuantityLabel(order)}</h4>
                   <span class="status ${statusClass(order.status)}">${order.status}</span>
                 </div>
-                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Total: ${money(order.total)} · Delivery fee: ${money(order.deliveryFee)} · Placed ${order.createdAt}</div>
+                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Total: ${money(order.total)} · Delivery fee: ${money(order.deliveryFee)} · Placed ${order.createdAt}</div>${orderItemList(order)}
               </div>
               <div class="order-actions">
                 <button class="secondary" onclick="openOrderTracking('${order.id}')">Track order</button>
@@ -1836,7 +2099,7 @@
     const order = state.orders.find(o=>o.id===orderId);
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Order ${order.id}</span><h2>Cancel this order?</h2><p class="meta">${order.product} · ${order.qty} kg</p></div>
+        <div><span class="tag">Order ${order.id}</span><h2>Cancel this order?</h2><p class="meta">${orderProductLabel(order)} · ${orderQuantityLabel(order)}</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
       <div class="modal-actions">
@@ -1849,8 +2112,10 @@
   function confirmCancelBuyerOrder(orderId){
     const order = state.orders.find(o=>o.id===orderId);
     order.status = "Cancelled";
-    const product = state.products.find(p=>p.id===order.productId);
-    if(product) product.current = Math.max(0,groupDemand(product)-order.qty);
+    orderItems(order).forEach(item=>{
+      const product = state.products.find(p=>p.id===item.productId);
+      if(product) product.current = Math.max(0,groupDemand(product)-Number(item.qty||0));
+    });
     saveState(); closeModal(); refreshAll();
     showToast("Order cancelled.");
   }
@@ -1863,7 +2128,7 @@
 
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Order ${order.id}</span><h2>${order.product} · ${order.qty} kg</h2><p class="meta">${order.farm} · Delivery ${order.deliveryDay}</p></div>
+        <div><span class="tag">Order ${order.id}</span><h2>${orderProductLabel(order)} · ${orderQuantityLabel(order)}</h2><p class="meta">${order.farm} · Delivery ${order.deliveryDay}</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
@@ -1882,6 +2147,7 @@
         </div>
       `}
 
+      ${orderItemList(order)}
       <div class="summary">
         <div class="summary-row"><span>Produce</span><strong>${money(order.produceCost)}</strong></div>
         <div class="summary-row"><span>Distance + weight delivery</span><strong>${money(order.deliveryFee)}</strong></div>
@@ -2061,7 +2327,11 @@
     if(!container) return;
 
     const productIds = state.products.filter(p=>p.farmId===currentFarmProfile().id).map(p=>p.id);
-    const orders = state.orders.filter(o=>productIds.includes(o.productId)).slice().reverse();
+    const orders = state.orders.filter(o=>
+      o.farmId===currentFarmProfile().id ||
+      productIds.includes(o.productId) ||
+      (o.items||[]).some(item=>productIds.includes(item.productId))
+    ).slice().reverse();
 
     container.innerHTML = `
       <div class="panel">
@@ -2074,8 +2344,8 @@
                 <tr>
                   <td>${order.id}</td>
                   <td>${order.buyer}<div class="small">${order.area}</div></td>
-                  <td>${order.product}</td>
-                  <td>${order.qty} kg</td>
+                  <td>${orderProductLabel(order)}${orderItemList(order)}</td>
+                  <td>${orderQuantityLabel(order)}</td>
                   <td>${order.deliveryDay}</td>
                   <td><span class="status ${statusClass(order.status)}">${order.status}</span></td>
                   <td>${farmOrderActions(order)}</td>
@@ -2100,24 +2370,32 @@
 
   function confirmFarmOrder(orderId){
     const order = state.orders.find(o=>o.id===orderId);
-    const product = state.products.find(p=>p.id===order.productId);
+    const items = orderItems(order);
 
-    if(product.available < order.qty){
-      showToast("Not enough available stock.");
-      return;
+    for(const item of items){
+      const product = state.products.find(p=>p.id===item.productId);
+      if(!product || product.available < item.qty){
+        showToast(`Not enough available stock for ${item.product}.`);
+        return;
+      }
     }
 
     order.status = "Confirmed";
-    product.available -= order.qty;
+    items.forEach(item=>{
+      const product = state.products.find(p=>p.id===item.productId);
+      if(product) product.available -= Number(item.qty||0);
+    });
     saveState(); refreshAll();
-    showToast(`Order ${order.id} confirmed.`);
+    showToast(`Farm batch order ${order.id} confirmed.`);
   }
 
   function rejectFarmOrder(orderId){
     const order = state.orders.find(o=>o.id===orderId);
     order.status = "Rejected";
-    const product = state.products.find(p=>p.id===order.productId);
-    if(product) product.current = Math.max(0,groupDemand(product)-order.qty);
+    orderItems(order).forEach(item=>{
+      const product = state.products.find(p=>p.id===item.productId);
+      if(product) product.current = Math.max(0,groupDemand(product)-Number(item.qty||0));
+    });
     saveState(); refreshAll();
     showToast(`Order ${order.id} rejected.`);
   }
@@ -2171,10 +2449,10 @@
       available.innerHTML = `
         <div class="panel">
           <div class="panel-head">
-            <div><h3>Open relay tasks</h3><p>Riders choose the route leg that matches their area, vehicle and availability</p></div>
+            <div><h3>Open relay tasks</h3><p>Riders choose a route leg and use the map search to check pickup and destination</p></div>
             <span class="tag">Self-accept model</span>
           </div>
-          <div class="info-notice">The coordinator publishes a shared route, but does not assign riders. Each rider accepts a suitable leg from this task board. This better reflects platform-based collective participation.</div>
+          <div class="info-notice">The coordinator publishes a shared route, but does not assign riders. Each rider accepts a suitable leg from this task board and can search pickup or destination on the route map. This better reflects platform-based collective participation.</div>
           <div class="rider-task-grid">
             ${openTasks.length ? openTasks.map(task=>riderTaskCard(task,"open")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No open tasks now</strong>Create a shared route from ready orders, then open relay tasks will appear here.</div>`}
           </div>
@@ -2198,12 +2476,13 @@
   }
 
   function riderTaskCard(task,mode){
-    const {route,segment,index,key} = task;
+    const {route,orders,segment,index,key} = task;
     const claim = route.riderClaims?.[key];
     const taskStatus = route.legStatus?.[key] || (claim ? "Accepted" : "Open");
     const canAccept = !claim && route.status==="Open for rider acceptance";
     const canRelease = claim===currentRider().name && ["Open for rider acceptance","Ready to start"].includes(route.status);
     const canComplete = claim===currentRider().name && route.status==="In transit" && taskStatus!=="Completed";
+    const canSearch = route.status!=="Delivered" && (!claim || claim===currentRider().name);
     return `
       <article class="rider-task-card ${claim?"claimed":""}">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:start">
@@ -2214,9 +2493,12 @@
           <span class="claim-badge ${taskStatus==="Open"?"open":taskStatus==="Completed"?"done":"locked"}">${taskStatus}</span>
         </div>
         <div class="meta"><strong>${segment.role}</strong><br>${segment.from} → ${segment.to}</div>
+        ${renderRouteMap(route,orders,key)}
         <div class="small">Rider: ${claim || "Open to claim"}</div>
         <div class="small">Route status: ${route.status}</div>
         <div class="route-actions">
+          ${canSearch ? `<button class="secondary" onclick="searchRiderLocation('${route.id}',${index},'pickup')">Search pickup</button>` : ""}
+          ${canSearch ? `<button class="secondary" onclick="searchRiderLocation('${route.id}',${index},'destination')">Search destination</button>` : ""}
           ${canAccept ? `<button class="primary" onclick="acceptRiderTask('${route.id}',${index})">Accept task</button>` : ""}
           ${canRelease ? `<button class="secondary" onclick="releaseRiderTask('${route.id}',${index})">Release</button>` : ""}
           ${canComplete ? `<button class="primary" onclick="completeRiderTask('${route.id}',${index})">Mark task complete</button>` : ""}
@@ -2359,7 +2641,7 @@
                   <td>${order.buyer}</td>
                   <td>${order.area}</td>
                   <td>${order.deliveryDay}</td>
-                  <td>${order.product} · ${order.qty} kg</td>
+                  <td>${orderProductLabel(order)} · ${orderQuantityLabel(order)}${orderItemList(order)}</td>
                   <td>${money(order.deliveryFee)}</td>
                 </tr>
               `).join("") || `<tr><td colspan="8"><div class="empty"><strong>No orders ready for pickup</strong>Farms must mark confirmed orders as ready before route creation.</div></td></tr>`}
@@ -2380,7 +2662,7 @@
     const preselected = $$(".pool-check:checked").map(input=>input.value);
     openModal(`
       <div class="modal-head">
-        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, then publish the relay route for riders to self-accept</p></div>
+        <div><span class="tag">Shared delivery + collective wisdom</span><h2>Create a shared delivery route</h2><p class="meta">Choose compatible orders, then publish the relay route for riders to self-accept and search on the map</p></div>
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
@@ -2474,6 +2756,7 @@
       driverWisdom:routeWisdomFor(areas[0]),
       riderClaims:{},
       legStatus:{},
+      riderSearches:{},
       status:"Open for rider acceptance",
       relaySegments:buildRelaySegments({area:areas[0],status:"Open for rider acceptance",riderClaims:{},legStatus:{}},orders),
       createdAt:nowLabel()
@@ -2497,7 +2780,7 @@
     const routes = state.routes.slice().reverse();
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes and rider acceptance</p></div></div>
+        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes, rider acceptance and map search results</p></div></div>
         <div class="route-list">
           ${routes.length ? routes.map(route=>{
             const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
@@ -2519,6 +2802,7 @@
                   </div>
                 </div>
                 ${renderRelaySegments(route,orders)}
+                ${renderRouteMap(route,orders)}
                 <div class="small">${orders.length} order${orders.length===1?"":"s"} · Created ${route.createdAt}<br>${route.driverWisdom||routeWisdomFor(route.area)}</div>
               </article>
             `;
@@ -2584,13 +2868,14 @@
       </div>
 
       ${renderRelaySegments(route,orders)}
+      ${renderRouteMap(route,orders)}
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>Order</th><th>Buyer</th><th>Product</th><th>Quantity</th><th>Route tag</th><th>Status</th></tr></thead>
           <tbody>
             ${orders.map(order=>`
-              <tr><td>${order.id}</td><td>${order.buyer}</td><td>${order.product}</td><td>${order.qty} kg</td><td>${order.routeTag||"Pending"}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span></td></tr>
+              <tr><td>${order.id}</td><td>${order.buyer}</td><td>${orderProductLabel(order)}${orderItemList(order)}</td><td>${orderQuantityLabel(order)}</td><td>${order.routeTag||"Pending"}</td><td><span class="status ${statusClass(order.status)}">${order.status}</span></td></tr>
             `).join("")}
           </tbody>
         </table>
