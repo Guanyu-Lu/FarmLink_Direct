@@ -2734,12 +2734,16 @@
         </div>
       ` : `
         <div class="timeline">
-          ${steps.map((step,i)=>`
-            <div class="timeline-row ${i<index?"done":i===index?"current":""}">
-              <div class="timeline-mark">${i<index?"✓":i+1}</div>
+          ${steps.map((step,i)=>{
+            const deliveredView = order.status === "Delivered";
+            const rowClass = deliveredView ? (i<=index?"done":"") : (i<index?"done":i===index?"current":"");
+            const markLabel = deliveredView ? (i<=index?"✓":i+1) : (i<index?"✓":i+1);
+            return `
+            <div class="timeline-row ${rowClass}">
+              <div class="timeline-mark">${markLabel}</div>
               <div><h4>${step}</h4><p>${trackingDescription(step,order)}</p></div>
             </div>
-          `).join("")}
+          `}).join("")}
         </div>
       `}
 
