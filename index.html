@@ -559,6 +559,28 @@
       stroke:#2f6b3c;
       stroke-width:3;
     }
+    .clean-map-search-panel{
+      stroke:#f2b84b;
+      stroke-width:4;
+      stroke-dasharray:8 6;
+    }
+    .clean-map-search-marker{
+      fill:#f2b84b;
+      stroke:#ffffff;
+      stroke-width:2;
+      filter:url(#cleanMapShadow);
+    }
+    .clean-map-search-icon{
+      fill:#493707;
+      font-size:15px;
+      font-weight:900;
+      text-anchor:middle;
+      dominant-baseline:central;
+    }
+    .map-location-chip.searched{
+      border-color:#e5b84f;
+      box-shadow:0 0 0 3px rgba(242,184,75,.16);
+    }
 
     .clean-map-driver-icon{
       font-size:22px;
@@ -1349,7 +1371,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v18_aligned_pricing_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v20_independent_live_maps_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1524,6 +1546,7 @@
       if(!route.driverClaims) route.driverClaims = {};
       if(!route.legStatus) route.legStatus = {};
       if(!route.driverSearches) route.driverSearches = {};
+      if(!route.driverPositions) route.driverPositions = {};
       if(route.status==="Scheduled") route.status = Object.keys(route.driverClaims).length ? "Ready to start" : "Open for driver claim";
       const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
       route.relaySegments = buildRelaySegments(route,orders);
@@ -1693,16 +1716,19 @@
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
     route.driverSearches = route.driverSearches || {};
+    route.driverPositions = route.driverPositions || {};
     const segment = route.relaySegments[segmentIndex];
-    route.driverSearches[key] = {
+    route.driverPositions[key] = {
       driver:currentDriver().name,
-      point:"accepted-start",
-      pointLabel:"claimed task starting point",
       location:segment?.from || "Route starting point",
+      activity:"Task claimed — waiting for route start",
       mapPoint:activeMapPointForSegment(segmentIndex,"pickup"),
+      pointLabel:"Simulated live position based on the claimed task.",
       time:nowLabel(),
-      updatedAt:Date.now()
+      updatedAt:Date.now(),
+      isTrackingEstimate:true
     };
+    delete route.driverSearches[key];
     updateRouteAcceptanceStatus(route);
     saveState();
     refreshAll();
@@ -1723,6 +1749,8 @@
     }
     delete route.driverClaims[key];
     delete route.legStatus[key];
+    if(route.driverPositions) delete route.driverPositions[key];
+    if(route.driverSearches) delete route.driverSearches[key];
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     route.relaySegments = buildRelaySegments(route,orders);
     updateRouteAcceptanceStatus(route);
@@ -1746,17 +1774,20 @@
     route.legStatus[key] = "Completed";
     const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
     const completedSegment = buildRelaySegments(route,orders)[segmentIndex];
+    route.driverPositions = route.driverPositions || {};
     route.driverSearches = route.driverSearches || {};
     if(completedSegment){
-      route.driverSearches[key] = {
+      route.driverPositions[key] = {
         driver:currentDriver().name,
-        point:"destination",
-        pointLabel:"completed destination",
         location:completedSegment.to,
+        activity:`${completedSegment.role} completed`,
         mapPoint:activeMapPointForSegment(segmentIndex,"destination"),
+        pointLabel:"Simulated live position updated from task progress.",
         time:nowLabel(),
-        updatedAt:Date.now()
+        updatedAt:Date.now(),
+        isTrackingEstimate:true
       };
+      delete route.driverSearches[key];
     }
     route.relaySegments = buildRelaySegments(route,orders);
     if(allRouteLegsCompleted(route)){
@@ -1790,14 +1821,56 @@
     return segmentIndex===0 ? "pickup" : segmentIndex===1 ? "area" : "buyer";
   }
 
-  function latestRouteSearch(route,activeLegKey=null){
-    const searches = route?.driverSearches || {};
+  function driverSearchForLeg(route,activeLegKey){
+    if(!activeLegKey) return null;
+    return route?.driverSearches?.[activeLegKey] || null;
+  }
+
+  function defaultLivePositionForLeg(route,activeLegKey){
+    if(!route || !activeLegKey || !route.driverClaims?.[activeLegKey]) return null;
+    const index = Math.max(0,["leg1","leg2","leg3"].indexOf(activeLegKey));
+    const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    const segment = buildRelaySegments(route,orders)[index];
+    if(!segment) return null;
+    const completed = route.legStatus?.[activeLegKey] === "Completed" || route.status === "Delivered";
+    const pointType = completed ? "destination" : "pickup";
+    return {
+      driver:route.driverClaims[activeLegKey],
+      location:completed ? segment.to : segment.from,
+      activity:completed ? `${segment.role} completed` : (route.status === "In transit" ? `${segment.role} in progress` : "Task claimed — waiting for route start"),
+      mapPoint:activeMapPointForSegment(index,pointType),
+      pointLabel:"Simulated live position based on delivery progress.",
+      time:nowLabel(),
+      updatedAt:0,
+      isTrackingEstimate:true
+    };
+  }
+
+  function liveDriverPosition(route,activeLegKey=null){
+    if(!route) return null;
+    route.driverPositions = route.driverPositions || {};
+
     if(activeLegKey){
-      return searches[activeLegKey] || null;
+      return route.driverPositions[activeLegKey] || defaultLivePositionForLeg(route,activeLegKey);
     }
-    const values = Object.values(searches);
-    if(!values.length) return null;
-    return values.slice().sort((a,b)=>(a.updatedAt||0)-(b.updatedAt||0))[values.length-1];
+
+    if(route.status === "Delivered"){
+      const finalDriver = route.driverClaims?.leg3 || "Delivery completed";
+      return {
+        driver:finalDriver,
+        location:"Delivered to buyer area",
+        activity:"Delivery completed",
+        mapPoint:"buyer",
+        pointLabel:"Final delivery checkpoint.",
+        time:nowLabel(),
+        updatedAt:Date.now(),
+        isTrackingEstimate:true
+      };
+    }
+
+    const current = currentRouteSegment(route);
+    if(!current?.key || current.key === "completed") return null;
+    return route.driverPositions[current.key] || defaultLivePositionForLeg(route,current.key);
   }
 
   function mapCoordinate(pointId){
@@ -1810,8 +1883,9 @@
     return coords[pointId] || coords.area;
   }
 
-  function renderVirtualMapSvg(route,points,activePoint){
-    const activeCoord = activePoint ? mapCoordinate(activePoint) : null;
+  function renderVirtualMapSvg(route,points,driverPoint,searchPoint=null){
+    const activeCoord = driverPoint ? mapCoordinate(driverPoint) : null;
+    const searchCoord = searchPoint ? mapCoordinate(searchPoint) : null;
     const buyerLabel = route.area.length>18 ? route.area.slice(0,18)+"…" : route.area;
 
     const panels = [
@@ -1848,13 +1922,20 @@
         <!-- Opaque checkpoint panels sit above roads and route -->
         ${panels.map(panel=>`
           <g>
-            <rect class="clean-map-zone ${panel.id===activePoint?"clean-map-active-panel":""}" x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" rx="20"/>
+            <rect class="clean-map-zone ${panel.id===driverPoint?"clean-map-active-panel":""} ${panel.id===searchPoint?"clean-map-search-panel":""}" x="${panel.x}" y="${panel.y}" width="${panel.w}" height="${panel.h}" rx="20"/>
             <circle class="clean-map-badge" cx="${panel.bx}" cy="${panel.by}" r="15"/>
             <text class="clean-map-badge-text" x="${panel.bx}" y="${panel.by+1}">${panel.num}</text>
             <text class="clean-map-panel-title" x="${panel.x+panel.w/2}" y="${panel.y+33}">${panel.title}</text>
             <text class="clean-map-panel-sub" x="${panel.x+panel.w/2}" y="${panel.y+55}">${panel.sub}</text>
           </g>
         `).join("")}
+
+        ${searchCoord ? `
+          <g transform="translate(${searchCoord.x+28},${searchCoord.y-30})">
+            <circle class="clean-map-search-marker" cx="0" cy="0" r="15"/>
+            <text class="clean-map-search-icon" x="0" y="1">⌕</text>
+          </g>
+        ` : ""}
 
         ${activeCoord ? `
           <g transform="translate(${activeCoord.x},${activeCoord.y-43})">
@@ -1869,8 +1950,10 @@
 
   function renderRouteMap(route,orders,activeLegKey=null,trackingOverride=null){
     const points = routeMapPoints(route,orders);
-    const latestSearch = trackingOverride || latestRouteSearch(route,activeLegKey);
-    const activePoint = latestSearch?.mapPoint || null;
+    const livePosition = trackingOverride || liveDriverPosition(route,activeLegKey);
+    const searchPreview = activeLegKey ? driverSearchForLeg(route,activeLegKey) : null;
+    const driverPoint = livePosition?.mapPoint || null;
+    const searchPoint = searchPreview?.mapPoint || null;
 
     return `
       <div class="route-map-card">
@@ -1883,15 +1966,16 @@
             <strong>Route map</strong>
             <span>1 Farm → 2 Pickup hub → 3 Area hub → 4 Buyer area</span>
           </div>
-          ${renderVirtualMapSvg(route,points,activePoint)}
+          ${renderVirtualMapSvg(route,points,driverPoint,searchPoint)}
           <div class="map-legend">
             <span><i class="legend-dot"></i> Delivery checkpoints</span>
             <span><i class="legend-road"></i> Main road network</span>
-            <span>🚚 Driver vehicle position</span>
+            <span>🚚 Simulated live driver position</span>
+            ${searchPreview ? `<span>⌕ Searched checkpoint</span>` : ""}
           </div>
           <div class="map-location-grid">
             ${points.map(point=>`
-              <div class="map-location-chip ${point.id===activePoint?"active":""}">
+              <div class="map-location-chip ${point.id===driverPoint?"active":""} ${point.id===searchPoint?"searched":""}">
                 <strong>${point.icon}. ${point.label}</strong>
                 ${point.value}
               </div>
@@ -1899,11 +1983,11 @@
           </div>
         </div>
         <div class="map-search-result">
-          ${latestSearch
-            ? (latestSearch.isTrackingEstimate
-                ? `<strong>Driver position:</strong> ${latestSearch.driver} — ${latestSearch.location}. <span class="small">${latestSearch.pointLabel}</span>`
-                : `<strong>Map search result:</strong> ${latestSearch.driver} searched ${latestSearch.pointLabel} — ${latestSearch.location}. <span class="small">Updated ${latestSearch.time}</span>`)
-            : `<strong>Map search result:</strong> No driver map search for this route view yet. This virtual logistics map uses prototype farm and hub locations.`
+          ${searchPreview
+            ? `<strong>Search preview:</strong> ${searchPreview.pointLabel} — ${searchPreview.location}. <span class="small">The truck marker remains at the simulated live position. Updated ${searchPreview.time}</span>`
+            : livePosition
+              ? `<strong>Simulated live position:</strong> ${livePosition.driver} — ${livePosition.location}. <span class="small">${livePosition.activity || livePosition.pointLabel || "Updated from delivery progress."}</span>`
+              : `<strong>Driver position:</strong> No driver has claimed this delivery leg yet. Search results will highlight a checkpoint without moving other route maps.`
           }
         </div>
       </div>
@@ -1926,15 +2010,26 @@
     route.driverSearches[key] = {
       driver:currentDriver().name,
       point:pointType,
-      pointLabel:pointType==="pickup" ? "pickup location" : "destination",
+      pointLabel:pointType==="pickup" ? "Pickup search" : "Destination search",
       location,
       mapPoint:activeMapPointForSegment(segmentIndex,pointType),
       time:nowLabel(),
-      updatedAt:Date.now()
+      updatedAt:Date.now(),
+      isSearchPreview:true
     };
     saveState();
     refreshAll();
-    showToast(`${currentDriver().name} searched ${location} on the route map.`);
+    showToast(`${location} highlighted on this delivery-leg map. The live driver position did not move.`);
+  }
+
+  function clearDriverMapSearch(routeId,segmentIndex){
+    const route = state.routes.find(r=>r.id===routeId);
+    if(!route) return;
+    const key = legKey(segmentIndex);
+    if(route.driverSearches) delete route.driverSearches[key];
+    saveState();
+    refreshAll();
+    showToast("Map search preview cleared. Live driver position is unchanged.");
   }
 
 
@@ -2794,16 +2889,16 @@
         activeLegKey:null
       };
     }
-    const current = currentRouteSegment(route);
-    const latest = latestRouteSearch(route,null);
-    if(latest){
+    const live = liveDriverPosition(route,null);
+    if(live){
       return {
-        driver:latest.driver,
-        location:latest.location,
-        activity:`Searched ${latest.pointLabel}`,
-        activeLegKey:null
+        driver:live.driver,
+        location:live.location,
+        activity:live.activity || "Delivery progress updated",
+        activeLegKey:currentRouteSegment(route)?.key || null
       };
     }
+    const current = currentRouteSegment(route);
     return {
       driver:current?.driver || "Waiting for driver",
       location:current?.location || "Route not active yet",
@@ -2822,15 +2917,16 @@
   }
 
   function buyerTrackingMapState(route){
-    const latest = latestRouteSearch(route,null);
-    if(latest) return latest;
+    const live = liveDriverPosition(route,null);
+    if(live) return live;
 
     const current = currentRouteSegment(route);
     return {
       driver:current?.driver || "Waiting for driver",
       point:"route-stage",
-      pointLabel:"Estimated from the current delivery stage until a driver searches a location.",
+      pointLabel:"Estimated from the current delivery stage until a driver task is claimed.",
       location:current?.location || "Route not active yet",
+      activity:current?.label || route.status,
       mapPoint:mapPointForRouteStage(current?.key),
       time:nowLabel(),
       updatedAt:Date.now(),
@@ -3262,6 +3358,7 @@
         <div class="route-actions">
           ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'pickup')">Search this pickup</button>` : ""}
           ${canSearch ? `<button class="secondary" onclick="searchDriverLocation('${route.id}',${index},'destination')">Search this destination</button>` : ""}
+          ${route.driverSearches?.[key] ? `<button class="secondary" onclick="clearDriverMapSearch('${route.id}',${index})">Clear search</button>` : ""}
           ${canAccept ? `<button class="primary" onclick="acceptDriverTask('${route.id}',${index})">Claim task</button>` : ""}
           ${canRelease ? `<button class="secondary" onclick="releaseDriverTask('${route.id}',${index})">Release</button>` : ""}
           ${canComplete ? `<button class="primary" onclick="completeDriverTask('${route.id}',${index})">Mark task complete</button>` : ""}
@@ -3489,6 +3586,7 @@
        driverClaims:{},
       legStatus:{},
       driverSearches:{},
+      driverPositions:{},
       status:"Open for driver claim",
       relaySegments:buildRelaySegments({area:areas[0],status:"Open for driver claim",driverClaims:{},legStatus:{}},orders),
       createdAt:nowLabel()
@@ -3511,7 +3609,7 @@
     const routes = state.routes.slice().reverse();
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes, driver claims and map search results</p></div></div>
+        <div class="panel-head"><div><h3>Delivery routes</h3><p>Monitor published routes, driver claims and live delivery progress</p></div></div>
         <div class="route-list">
           ${routes.length ? routes.map(route=>{
             const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
@@ -3558,10 +3656,28 @@
       return;
     }
     route.status = "In transit";
-    ["leg1","leg2","leg3"].forEach(key=>{
+    route.driverPositions = route.driverPositions || {};
+    route.driverSearches = route.driverSearches || {};
+    const routeOrders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+    const routeSegments = buildRelaySegments(route,routeOrders);
+    ["leg1","leg2","leg3"].forEach((key,index)=>{
       if(route.legStatus[key]!=="Completed") route.legStatus[key] = "In progress";
+      const segment = routeSegments[index];
+      if(route.driverClaims?.[key] && segment){
+        route.driverPositions[key] = {
+          driver:route.driverClaims[key],
+          location:segment.from,
+          activity:`${segment.role} in progress`,
+          mapPoint:activeMapPointForSegment(index,"pickup"),
+          pointLabel:"Simulated live position updated when the route started.",
+          time:nowLabel(),
+          updatedAt:Date.now(),
+          isTrackingEstimate:true
+        };
+      }
+      delete route.driverSearches[key];
     });
-    route.relaySegments = buildRelaySegments(route,route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean));
+    route.relaySegments = buildRelaySegments(route,routeOrders);
     route.orderIds.forEach(id=>{
       const order = state.orders.find(o=>o.id===id);
       if(order) order.status = "In transit";
