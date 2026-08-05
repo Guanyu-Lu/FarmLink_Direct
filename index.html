@@ -916,6 +916,62 @@
       box-shadow:var(--shadow-soft);
     }
     .driver-task-card.claimed{background:linear-gradient(135deg,#fff,#f5f8f3)}
+    .task-payout-card{
+      border:1px solid #b9d4b2;
+      background:linear-gradient(135deg,#f1f9ee,#ffffff);
+      border-radius:13px;
+      padding:11px 12px;
+    }
+    .task-payout-card span{
+      display:block;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.035em;
+    }
+    .task-payout-card strong{
+      display:block;
+      color:var(--brand);
+      font-size:24px;
+      line-height:1.1;
+      margin:4px 0;
+    }
+    .task-payout-card small{
+      display:block;
+      color:var(--muted);
+      line-height:1.4;
+    }
+    .route-finance-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin:12px 0;
+    }
+    .route-finance-card{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:14px;
+      padding:12px;
+    }
+    .route-finance-card span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:750;
+      margin-bottom:4px;
+    }
+    .route-finance-card strong{
+      display:block;
+      color:var(--brand);
+      font-size:20px;
+    }
+    .route-finance-card small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      line-height:1.35;
+    }
     .claim-badge{
       display:inline-flex;
       align-items:center;
@@ -930,7 +986,7 @@
     .claim-badge.open{background:var(--warning-bg);color:var(--warning)}
     .claim-badge.done{background:#eef4ea;color:var(--brand)}
     .claim-badge.locked{background:var(--info-bg);color:var(--info)}
-    @media(max-width:960px){.driver-task-grid{grid-template-columns:1fr}}
+    @media(max-width:960px){.driver-task-grid,.route-finance-grid{grid-template-columns:1fr}}
 
     .profile-switch{
       display:flex;
@@ -982,6 +1038,31 @@
     .relay-segment .small{
       display:block;
       margin-top:4px;
+    }
+    .farm-pickup-schedule{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin:10px 0 7px;
+      padding:9px 10px;
+      border:1px solid #c8ddc2;
+      border-radius:11px;
+      background:var(--surface-2);
+      color:var(--brand-dark);
+      font-size:12px;
+      font-weight:850;
+      line-height:1.35;
+    }
+    .farm-pickup-schedule .schedule-icon{
+      width:25px;
+      height:25px;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      flex:0 0 auto;
+      background:var(--brand);
+      color:#fff;
+      font-size:13px;
     }
     @media(max-width:960px){
       .profile-switch{justify-content:flex-start}
@@ -1308,7 +1389,7 @@
       <div class="stats">
         <div class="stat"><span>Orders ready to publish</span><strong id="adminPoolStat">0</strong></div>
         <div class="stat"><span>Published routes</span><strong id="adminRouteStat">0</strong></div>
-        <div class="stat"><span>Delivery fees collected</span><strong id="adminRevenueStat">SGD 0</strong></div>
+        <div class="stat"><span>Platform commission · 20%</span><strong id="adminRevenueStat">SGD 0</strong></div>
         <div class="stat"><span>Completed deliveries</span><strong id="adminDeliveredStat">0</strong></div>
       </div>
 
@@ -1371,7 +1452,7 @@
     farmProfile: {id:"green-valley",name:"Green Valley Farm",origin:"Selayang, Selangor"}
   };
 
-  const STORAGE_KEY = "farmlink_direct_kl_demo_v20_independent_live_maps_state";
+  const STORAGE_KEY = "farmlink_direct_kl_demo_v25_20pct_commission_only_state";
 
   let state = loadState();
   let activeRole = null;
@@ -1379,6 +1460,12 @@
   let farmTab = "listings";
   let adminTab = "pool";
   let driverTab = "available";
+
+  // Transparent MVP revenue model:
+  // Drivers receive 80% of the distance-and-weight delivery charge.
+  // FarmLink retains a 20% delivery commission. No separate buyer service fee is charged.
+  const DRIVER_PAYOUT_RATE = 0.80;
+  const PLATFORM_COMMISSION_RATE = 0.20;
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -1542,6 +1629,10 @@
         item.distanceKm = product ? product.distanceKm : 15;
       }
     });
+    state.orders.forEach(order=>{
+      delete order.coordinationFee;
+      order.total = roundCurrency(Number(order.produceCost||0)+Number(order.deliveryFee||0));
+    });
     state.routes.forEach(route=>{
       if(!route.driverClaims) route.driverClaims = {};
       if(!route.legStatus) route.legStatus = {};
@@ -1549,6 +1640,13 @@
       if(!route.driverPositions) route.driverPositions = {};
       if(route.status==="Scheduled") route.status = Object.keys(route.driverClaims).length ? "Ready to start" : "Open for driver claim";
       const orders = route.orderIds.map(id=>state.orders.find(o=>o.id===id)).filter(Boolean);
+      const distancePlan = estimateRouteDistancePlan(route.area,orders);
+      if(!Array.isArray(route.legDistances) || route.legDistances.length!==3){
+        route.legDistances = distancePlan.legDistances;
+      }
+      if(!route.estimatedDistanceKm){
+        route.estimatedDistanceKm = route.legDistances.reduce((sum,value)=>sum+Number(value||0),0);
+      }
       route.relaySegments = buildRelaySegments(route,orders);
     });
   }
@@ -1621,6 +1719,83 @@
 
   function roundCurrency(value){
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+  }
+
+  function routeOrders(route){
+    return (route?.orderIds || []).map(id=>state.orders.find(order=>order.id===id)).filter(Boolean);
+  }
+
+  function estimateRouteDistancePlan(area,orders){
+    const firstOrder = orders?.[0] || null;
+    const firstItem = firstOrder ? orderItems(firstOrder)[0] : null;
+    const product = firstItem ? state.products.find(item=>item.id===firstItem.productId) : null;
+    const farmDistance = Number(product?.distanceKm || 15);
+    const areaDistance = Number(zoneDistanceKm(area));
+    const extraStopDistance = Math.max(0,(orders?.length || 1)-1)*2;
+    const targetTotal = Math.max(12,Math.round(farmDistance+areaDistance+extraStopDistance));
+
+    const leg1 = Math.max(3,Math.round(farmDistance*0.25));
+    const leg3 = Math.max(3,Math.round(areaDistance*0.65+extraStopDistance));
+    const leg2 = Math.max(4,targetTotal-leg1-leg3);
+    const legDistances = [leg1,leg2,leg3];
+    return {
+      totalDistance:legDistances.reduce((sum,value)=>sum+value,0),
+      legDistances
+    };
+  }
+
+  function routeFinancialPlan(route,orders=routeOrders(route)){
+    const totalDeliveryFees = roundCurrency(orders.reduce((sum,order)=>sum+Number(order.deliveryFee||0),0));
+    const driverPayoutPool = roundCurrency(totalDeliveryFees*DRIVER_PAYOUT_RATE);
+    const platformDeliveryCommission = roundCurrency(totalDeliveryFees*PLATFORM_COMMISSION_RATE);
+    const platformContribution = platformDeliveryCommission;
+    const fallback = estimateRouteDistancePlan(route?.area,orders);
+    const legDistances = Array.isArray(route?.legDistances) && route.legDistances.length===3
+      ? route.legDistances.map(value=>Number(value||0))
+      : fallback.legDistances;
+    const totalDistance = legDistances.reduce((sum,value)=>sum+value,0) || 1;
+    const legPayouts = legDistances.map((distance,index)=>{
+      if(index===legDistances.length-1){
+        const prior = legDistances.slice(0,index).reduce((sum,priorDistance)=>sum+roundCurrency(driverPayoutPool*priorDistance/totalDistance),0);
+        return roundCurrency(driverPayoutPool-prior);
+      }
+      return roundCurrency(driverPayoutPool*distance/totalDistance);
+    });
+    return {
+      totalDeliveryFees,
+      driverPayoutPool,
+      platformDeliveryCommission,
+      platformContribution,
+      totalDistance,
+      legDistances,
+      legPayouts
+    };
+  }
+
+  function renderRouteFinanceSummary(route,orders=routeOrders(route)){
+    const finance = routeFinancialPlan(route,orders);
+    return `
+      <div class="route-finance-grid">
+        <div class="route-finance-card">
+          <span>Buyer delivery charges</span>
+          <strong>${money(finance.totalDeliveryFees)}</strong>
+          <small>Distance-and-weight charges collected for this route.</small>
+        </div>
+        <div class="route-finance-card">
+          <span>Driver payout pool · 80%</span>
+          <strong>${money(finance.driverPayoutPool)}</strong>
+          <small>Allocated among delivery legs according to estimated kilometres.</small>
+        </div>
+        <div class="route-finance-card">
+          <span>Platform commission · 20%</span>
+          <strong>${money(finance.platformDeliveryCommission)}</strong>
+          <small>Commission retained from the buyer delivery charge; no additional platform fee is charged.</small>
+        </div>
+      </div>
+      <div class="summary" style="margin-top:0">
+        <div class="summary-row total"><span>Platform commission before operating expenses</span><strong>${money(finance.platformContribution)}</strong></div>
+      </div>
+    `;
   }
 
 
@@ -2067,11 +2242,12 @@
     const buyerNames = orders.map(o=>o.buyer).join(", ");
     const claims = route.driverClaims || {};
     const legStatus = route.legStatus || {};
+    const finance = routeFinancialPlan(route,orders);
     const statusFor = key => route.status==="Delivered" ? "Completed" : (legStatus[key] || (claims[key] ? "Claimed" : "Open"));
     return [
-      {key:"leg1",leg:"Leg 1",from:primaryFarm,to:farmHub,driver:claims.leg1 || "Open to claim",role:"Farm pickup",status:statusFor("leg1")},
-      {key:"leg2",leg:"Leg 2",from:farmHub,to:zoneHub,driver:claims.leg2 || "Open to claim",role:"Hub-to-hub relay",status:statusFor("leg2")},
-      {key:"leg3",leg:"Leg 3",from:zoneHub,to:buyerNames,driver:claims.leg3 || "Open to claim",role:"Final-mile delivery",status:statusFor("leg3")}
+      {key:"leg1",leg:"Leg 1",from:primaryFarm,to:farmHub,driver:claims.leg1 || "Open to claim",role:"Farm pickup",status:statusFor("leg1"),distanceKm:finance.legDistances[0],payout:finance.legPayouts[0],pickupDay:route.deliveryDay || orders[0]?.deliveryDay || "To be confirmed",pickupTime:route.pickupTime || "To be confirmed"},
+      {key:"leg2",leg:"Leg 2",from:farmHub,to:zoneHub,driver:claims.leg2 || "Open to claim",role:"Hub-to-hub relay",status:statusFor("leg2"),distanceKm:finance.legDistances[1],payout:finance.legPayouts[1]},
+      {key:"leg3",leg:"Leg 3",from:zoneHub,to:buyerNames,driver:claims.leg3 || "Open to claim",role:"Final-mile delivery",status:statusFor("leg3"),distanceKm:finance.legDistances[2],payout:finance.legPayouts[2]}
     ];
   }
 
@@ -2082,6 +2258,9 @@
       <div class="relay-segment">
         <strong>${segment.leg}: ${segment.role}</strong>
         <div>${segment.from} → ${segment.to}</div>
+        ${segment.key==="leg1" ? `<div class="farm-pickup-schedule"><span class="schedule-icon">🗓</span><span>Farm pickup: ${segment.pickupDay} at ${segment.pickupTime}</span></div>` : ""}
+        <span class="small">Estimated distance: ${segment.distanceKm} km</span>
+        <span class="small">Driver payout: ${money(segment.payout)}</span>
         <span class="small">Driver: ${segment.driver}</span>
         <span class="small">Task status: ${segment.status}</span>
       </div>
@@ -2097,7 +2276,8 @@
       const product = state.products.find(p=>p.id===order.productId);
       if(product && !order.routeId){
         order.deliveryFee = calculateDeliveryFee(product,order.area,order.qty);
-        order.total = order.produceCost + order.deliveryFee;
+        delete order.coordinationFee;
+        order.total = roundCurrency(order.produceCost + order.deliveryFee);
       }
     });
   }
@@ -2132,7 +2312,7 @@
         <button class="close" onclick="closeModal()">✕</button>
       </div>
       <div class="info-notice">
-        Product prices are set with a farm-direct discount because buyers purchase closer to suppliers instead of through multiple intermediaries. Delivery fee is calculated from total delivery distance and total order weight. Items going to the same area on the same delivery day can share one route fee.
+        Product prices are set with a farm-direct discount because buyers purchase closer to suppliers instead of through multiple intermediaries. The delivery charge is calculated from total delivery distance and weight. Drivers receive 80% of that delivery charge, while FarmLink retains a 20% platform commission. Buyers are not charged a separate platform service fee.
       </div>
       <div class="pricing-rule-grid">
         <div class="pricing-rule">
@@ -2151,7 +2331,8 @@
       <div class="summary" style="margin-top:14px">
         <div class="summary-row"><span>Formula</span><strong>SGD 4.50 + extra km charge + extra kg charge</strong></div>
         <div class="summary-row"><span>Shared route rule</span><strong>Same area + same delivery day = one route fee</strong></div>
-        
+        <div class="summary-row"><span>Driver share</span><strong>80% of the delivery charge</strong></div>
+        <div class="summary-row"><span>Platform commission</span><strong>20% of the delivery charge</strong></div>
       </div>
       <div class="modal-actions">
         <button class="primary" onclick="closeModal()">Got it</button>
@@ -2468,7 +2649,7 @@
       <div class="summary-row"><span>Group total after checkout</span><strong>${newTotal}/${p.target} kg</strong></div>
       <div class="summary-row"><span>Remaining after this order</span><strong>${Math.max(0,p.target-newTotal)} kg</strong></div>
       <div class="summary-row"><span>Produce cost</span><strong>${money(produceCost)}</strong></div>
-      <div class="summary-row"><span>Distance + weight delivery fee</span><strong>${money(deliveryFee)}</strong></div>
+      <div class="summary-row"><span>Distance + weight delivery charge</span><strong>${money(deliveryFee)}</strong></div>
       <div class="summary-row"><span>Pricing basis</span><strong>${totalDeliveryDistance(p,area)} km total distance · ${qty} kg</strong></div>
       <div class="summary-row total"><span>Estimated total</span><strong>${money(produceCost+deliveryFee)}</strong></div>
     `;
@@ -2575,7 +2756,7 @@
             <div class="summary-row"><span>Shared route groups</span><strong>${deliveryGroups.length}</strong></div>
             <div class="summary-row total"><span>Total</span><strong>${money(produceTotal+deliveryTotal)}</strong></div>
           </div>
-          <div class="info-notice">Product prices use a farm-direct discount logic, so listed produce is priced slightly below typical retail procurement levels. Delivery pricing uses total route distance and total weight. Items with the same area and delivery day share one route fee.</div>
+          <div class="info-notice">Product prices use a farm-direct discount logic. Delivery pricing uses total route distance and weight, and compatible items share one route charge. Drivers receive 80% of the delivery charge, while FarmLink retains a 20% platform commission. No separate platform service fee is added.</div>
           <button class="ghost full" onclick="openPricingRules()">View delivery pricing rules</button>
           <button class="primary full" onclick="openCheckout()">Continue to checkout</button>
           <button class="ghost full" onclick="clearCart()">Clear cart</button>
@@ -2727,7 +2908,7 @@
         qty:group.qty,
         produceCost:group.produceCost,
         deliveryFee,
-        total:group.produceCost+deliveryFee,
+        total:roundCurrency(group.produceCost+deliveryFee),
         deliveryDay:group.deliveryDay,
         status:"Awaiting farm confirmation",
         createdAt:nowLabel(),
@@ -2766,7 +2947,7 @@
                   <h4>${orderProductLabel(order)} · ${orderQuantityLabel(order)}</h4>
                   <span class="status ${statusClass(order.status)}">${order.status}</span>
                 </div>
-                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Delivery fee: ${money(order.deliveryFee)} · Placed ${order.createdAt}</div>${orderItemList(order)}
+                <div class="meta">Order ${order.id} · ${order.farm} · ${order.area} · ${order.deliveryDay}<br>Delivery: ${money(order.deliveryFee)} · Platform fee included · Placed ${order.createdAt}</div>${orderItemList(order)}
               </div>
               <div class="order-actions">
                 <div class="order-action-row">
@@ -2776,7 +2957,7 @@
                 <button class="order-total-box" onclick="openOrderCostDetails('${order.id}')">
                   <span>Total</span>
                   <strong>${money(order.total)}</strong>
-                  <small>Click for produce + delivery fee</small>
+                  <small>Click for produce + delivery + coordination</small>
                 </button>
               </div>
             </article>
@@ -2986,7 +3167,7 @@
 
       <div class="summary">
         <div class="summary-row"><span>Produce total</span><strong>${money(order.produceCost)}</strong></div>
-        <div class="summary-row"><span>Delivery fee</span><strong>${money(order.deliveryFee)}</strong></div>
+        <div class="summary-row"><span>Delivery charge</span><strong>${money(order.deliveryFee)}</strong></div>
         <div class="summary-row total"><span>Order total</span><strong>${money(order.total)}</strong></div>
       </div>
 
@@ -3008,7 +3189,8 @@
       <div class="summary">
         <div class="summary-row"><span>Pricing basis</span><strong>${breakdown.totalDistance} km total distance · ${breakdown.weight} kg</strong></div>
         <div class="summary-row"><span>Shared route rule</span><strong>Same area + same delivery day share one route fee</strong></div>
-        <div class="summary-row"><span>Stored delivery fee</span><strong>${money(order.deliveryFee)}</strong></div>
+        <div class="summary-row"><span>Driver payout share</span><strong>80% of delivery charge</strong></div>
+        <div class="summary-row"><span>Platform commission</span><strong>20% of delivery charge</strong></div>
       </div>
     `,true);
   }
@@ -3181,6 +3363,31 @@
     showToast("Product listing removed.");
   }
 
+  function farmPickupSchedule(order){
+    const route = routeForOrder(order);
+    if(!route){
+      if(["Awaiting farm confirmation","Confirmed","Ready for pickup"].includes(order.status)){
+        return `<strong>Waiting for route publication</strong><div class="small">Pickup day: ${order.deliveryDay}</div>`;
+      }
+      return `<strong>Not scheduled</strong><div class="small">No published route yet</div>`;
+    }
+
+    const pickupDay = route.deliveryDay || order.deliveryDay || "To be confirmed";
+    const pickupTime = route.pickupTime || "To be confirmed";
+    const pickupDriver = route.driverClaims?.leg1;
+    const pickupStatus = route.legStatus?.leg1;
+
+    if(route.status==="Delivered" || pickupStatus==="Completed"){
+      return `<strong>${pickupDay} · ${pickupTime}</strong><div class="small">✓ Picked up${pickupDriver?` by ${pickupDriver}`:""}</div>`;
+    }
+
+    if(pickupDriver){
+      return `<strong>${pickupDay} · ${pickupTime}</strong><div class="small">Driver: ${pickupDriver}</div>`;
+    }
+
+    return `<strong>${pickupDay} · ${pickupTime}</strong><div class="small">Driver not claimed yet</div>`;
+  }
+
   function renderFarmOrders(){
     const container = $("#farmOrders");
     if(!container) return;
@@ -3194,10 +3401,10 @@
 
     container.innerHTML = `
       <div class="panel">
-        <div class="panel-head"><div><h3>Incoming and confirmed orders</h3><p>Confirm availability, prepare produce and release it for pickup</p></div></div>
+        <div class="panel-head"><div><h3>Incoming and confirmed orders</h3><p>Confirm availability, prepare produce and see the published pickup day, time and assigned driver</p></div></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Order</th><th>Buyer</th><th>Product</th><th>Quantity</th><th>Delivery</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>Order</th><th>Buyer</th><th>Product</th><th>Quantity</th><th>Delivery day</th><th>Pickup schedule</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
               ${orders.map(order=>`
                 <tr>
@@ -3206,10 +3413,11 @@
                   <td>${orderProductLabel(order)}${orderItemList(order)}</td>
                   <td>${orderQuantityLabel(order)}</td>
                   <td>${order.deliveryDay}</td>
+                  <td>${farmPickupSchedule(order)}</td>
                   <td><span class="status ${statusClass(order.status)}">${order.status}</span></td>
                   <td>${farmOrderActions(order)}</td>
                 </tr>
-              `).join("") || `<tr><td colspan="7"><div class="empty"><strong>No farm orders</strong>New buyer orders will appear here.</div></td></tr>`}
+              `).join("") || `<tr><td colspan="8"><div class="empty"><strong>No farm orders</strong>New buyer orders will appear here.</div></td></tr>`}
             </tbody>
           </table>
         </div>
@@ -3311,7 +3519,7 @@
             <div><h3>Open delivery legs</h3><p>Drivers choose a route leg, search the virtual map, and update their delivery progress</p></div>
             <span class="tag">Self-claim model</span>
           </div>
-          <div class="info-notice">The coordinator publishes a shared route, but does not assign drivers. Each driver self-claims a suitable leg from this task board and can search pickup or destination on the route map. This better reflects platform-based collective participation.</div>
+          <div class="info-notice"><strong>Driver earnings model:</strong> The coordinator publishes a shared route but does not assign drivers. Drivers receive 80% of collected delivery charges. That driver payout pool is divided among delivery legs in proportion to estimated kilometres. FarmLink retains a 20% platform commission. Buyers are not charged a separate platform service fee.</div>
           <div class="driver-task-grid">
             ${openTasks.length ? openTasks.map(task=>driverTaskCard(task,"open")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No open tasks now</strong>Create a shared route from ready orders, then open delivery legs will appear here.</div>`}
           </div>
@@ -3325,6 +3533,7 @@
         <div class="panel">
           <div class="panel-head">
             <div><h3>My claimed tasks</h3><p>Claimed tasks stay linked to the driver until released before start or completed after start</p></div>
+            <span class="tag">Estimated payout: ${money(mine.reduce((sum,task)=>sum+Number(task.segment.payout||0),0))}</span>
           </div>
           <div class="driver-task-grid">
             ${mine.length ? mine.map(task=>driverTaskCard(task,"mine")).join("") : `<div class="empty" style="grid-column:1/-1"><strong>No claimed tasks</strong>Claim an open task from the available task board.</div>`}
@@ -3352,6 +3561,12 @@
           <span class="claim-badge ${taskStatus==="Open"?"open":taskStatus==="Completed"?"done":"locked"}">${taskStatus}</span>
         </div>
         <div class="meta"><strong>${segment.role}</strong><br>${segment.from} → ${segment.to}</div>
+        ${key==="leg1" ? `<div class="farm-pickup-schedule"><span class="schedule-icon">🗓</span><span>Collect from farm: ${segment.pickupDay} at ${segment.pickupTime}</span></div>` : ""}
+        <div class="task-payout-card">
+          <span>${taskStatus==="Completed" || route.status==="Delivered" ? "Driver payout earned" : "Estimated driver payout"}</span>
+          <strong>${money(segment.payout)}</strong>
+          <small>${segment.distanceKm} km estimated · payout allocated from the 80% driver pool according to this leg's share of route distance.</small>
+        </div>
         ${renderRouteMap(route,orders,key)}
         <div class="small">Driver: ${claim || "Open to claim"}</div>
         <div class="small">Route status: ${route.status}</div>
@@ -3386,7 +3601,11 @@
 
     $("#adminPoolStat").textContent = pool.length;
     $("#adminRouteStat").textContent = activeRoutes.length;
-    $("#adminRevenueStat").textContent = `SGD ${validOrders.reduce((sum,o)=>sum+o.deliveryFee,0).toFixed(0)}`;
+    const platformContribution = validOrders.reduce((sum,order)=>{
+      const deliveryCommission = Number(order.deliveryFee||0)*PLATFORM_COMMISSION_RATE;
+      return sum+deliveryCommission;
+    },0);
+    $("#adminRevenueStat").textContent = `SGD ${platformContribution.toFixed(0)}`;
     $("#adminDeliveredStat").textContent = state.orders.filter(o=>o.status==="Delivered").length;
 
     renderAdminPool();
@@ -3463,7 +3682,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Select</th><th>Order</th><th>Farm</th><th>Buyer</th><th>Area</th><th>Delivery</th><th>Order details</th><th>Fee</th></tr></thead>
+            <thead><tr><th>Select</th><th>Order</th><th>Farm</th><th>Buyer</th><th>Area</th><th>Delivery</th><th>Order details</th><th>Buyer fees</th></tr></thead>
             <tbody>
               ${orders.map(order=>`
                 <tr>
@@ -3474,7 +3693,7 @@
                   <td>${order.area}</td>
                   <td>${order.deliveryDay}</td>
                   <td>${orderProductLabel(order)} · ${orderQuantityLabel(order)}${orderItemList(order)}</td>
-                  <td>${money(order.deliveryFee)}</td>
+                  <td>${money(order.deliveryFee)} total delivery charge<br><span class="small">20% platform commission included</span></td>
                 </tr>
               `).join("") || `<tr><td colspan="8"><div class="empty"><strong>No orders ready for pickup</strong>Farms must mark confirmed orders as ready before route creation.</div></td></tr>`}
             </tbody>
@@ -3546,14 +3765,19 @@
     const days = unique(orders.map(o=>o.deliveryDay));
     const compatible = areas.length===1 && days.length===1;
     const area = areas[0] || "General";
-    const distance = Math.round(8 + orders.length*2.5);
+    const distancePlan = estimateRouteDistancePlan(area,orders);
+    const previewRoute = {area,legDistances:distancePlan.legDistances,estimatedDistanceKm:distancePlan.totalDistance};
+    const finance = routeFinancialPlan(previewRoute,orders);
      
     $("#routePreview").innerHTML = `
       <div class="summary-row"><span>Selected orders</span><strong>${orders.length}</strong></div>
       <div class="summary-row"><span>Area</span><strong>${areas.join(", ")}</strong></div>
       <div class="summary-row"><span>Delivery day</span><strong>${days.join(", ")}</strong></div>
-      <div class="summary-row"><span>Estimated shared-route distance</span><strong>${distance} km</strong></div>
+      <div class="summary-row"><span>Estimated shared-route distance</span><strong>${finance.totalDistance} km</strong></div>
       <div class="summary-row"><span>Compatibility</span><strong>${compatible?"Strong match":"Review selection"}</strong></div>
+      ${renderRouteFinanceSummary(previewRoute,orders)}
+      <div class="summary-row"><span>Leg payout estimates</span><strong>${finance.legDistances.map((km,index)=>`Leg ${index+1}: ${km} km · ${money(finance.legPayouts[index])}`).join(" | ")}</strong></div>
+      <div class="fee-note">Driver earnings use 80% of the route delivery charges and are distributed by estimated leg distance. FarmLink earns only a 20% platform commission from the delivery charge; no separate buyer service fee is added.</div>
       <div class="route-insight">
         <div class="insight-card"><strong>Route grouping</strong>Orders share the same delivery area and delivery day.</div>
         <div class="insight-card"><strong>Open delivery legs</strong>Farm pickup, hub transfer and final-mile delivery are published as separate tasks.</div>
@@ -3583,6 +3807,8 @@
       deliveryDay:days[0],
       driver:"Driver task board",
       pickupTime:$("#routePickupTime").value,
+      estimatedDistanceKm:estimateRouteDistancePlan(areas[0],orders).totalDistance,
+      legDistances:estimateRouteDistancePlan(areas[0],orders).legDistances,
        driverClaims:{},
       legStatus:{},
       driverSearches:{},
@@ -3630,9 +3856,10 @@
                     <button class="secondary" onclick="openRouteDetails('${route.id}')">View details</button>
                   </div>
                 </div>
+                ${renderRouteFinanceSummary(route,orders)}
                 ${renderRelaySegments(route,orders)}
                 ${renderRouteMap(route,orders)}
-                <div class="small">${orders.length} order${orders.length===1?"":"s"} · Created ${route.createdAt}<br>Drivers self-claim open legs and use the virtual route map for pickup and destination support.</div>
+                <div class="small">${orders.length} order${orders.length===1?"":"s"} · Created ${route.createdAt}<br>Drivers see the estimated payout before claiming each leg. Payouts are allocated by leg distance from the 80% driver fulfilment pool. FarmLink retains a 20% platform commission with no separate buyer service fee.</div>
               </article>
             `;
           }).join("") : `<div class="empty"><strong>No delivery routes</strong>Create a route from orders that are ready for pickup.</div>`}
@@ -3714,6 +3941,7 @@
         <button class="close" onclick="closeModal()">✕</button>
       </div>
 
+      ${renderRouteFinanceSummary(route,orders)}
       ${renderRelaySegments(route,orders)}
       ${renderRouteMap(route,orders)}
 
@@ -3728,7 +3956,7 @@
         </table>
       </div>
 
-      <div class="info-notice" style="margin-top:14px"><strong>Delivery coordination:</strong> Drivers self-claim open delivery legs and use the virtual route map to search pickup and destination points. Buyer tracking updates reflect route progress.</div>
+      <div class="info-notice" style="margin-top:14px"><strong>Delivery coordination and payout:</strong> Drivers self-claim open legs after viewing estimated kilometres and earnings. The driver payout pool is 80% of collected route delivery charges and is allocated by leg distance. FarmLink retains a 20% platform commission before operating expenses, with no separate buyer service fee. Buyer tracking updates reflect route progress.</div>
 
       <div class="modal-actions">
         <button class="secondary" onclick="closeModal()">Close</button>
