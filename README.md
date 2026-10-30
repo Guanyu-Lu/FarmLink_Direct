@@ -4,6 +4,9 @@
 
 [**Live Demo**](https://guanyu-lu.github.io/FarmLink_Direct/) | [**GitHub Repository**](https://github.com/Guanyu-Lu/FarmLink_Direct)
 
+**Scan to Explore Demo:**  
+![FarmLink Direct Web QR Code](./Web_QR.png)
+
 > **CP2405 Assessment 2 · Group PA-03**  
 > **Status:** Interactive academic MVP (not a live commercial service)  
 > **Business concept:** Singapore-based B2B platform | **Initial pilot:** Kuala Lumpur, Malaysia | **Currency:** SGD
